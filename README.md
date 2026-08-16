@@ -80,8 +80,8 @@ MIT — see LICENSE
 
 ## Team
 
-- **Sagiru Garba** — Product / agent design
-- **Maryam Bola** — Development / implementation
+- **Sagiru Garba** — Development / implementation
+- **Maryam Bola** — Product / agent design
 
 ---
 
