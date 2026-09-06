@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 
 from .models import Setting, TriageRequest
 from .workflow import triage_request
@@ -34,11 +35,15 @@ def create_strands_agent():
         raise RuntimeError(
             "AWS Strands Agents SDK is not installed. Install requirements.txt and configure AWS access."
         )
-    return Agent(
-        system_prompt=(
+    agent_options = {
+        "system_prompt": (
             "You are SignBee Triage Agent. Understand interpreter requests, classify urgency, "
             "match qualified interpreters, explain your reasoning, and escalate ambiguous or "
             "high-risk cases to a human coordinator. Never invent availability."
         ),
-        tools=[triage_interpreter_request],
-    )
+        "tools": [triage_interpreter_request],
+    }
+    model_id = os.getenv("BEDROCK_MODEL_ID")
+    if model_id:
+        agent_options["model"] = model_id
+    return Agent(**agent_options)

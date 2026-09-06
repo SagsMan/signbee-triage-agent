@@ -21,7 +21,9 @@ The companion SignBEE app now exposes the matching UI flow: request intake, tria
 
 ## Current implementation
 
-The deterministic Python core in `agent/` runs locally without AWS credentials. It is the safe baseline for tests and demos while the AWS Strands/Bedrock access is being configured. `agent/strands_adapter.py` provides the optional Strands entry point and wraps the same explainable triage tool.
+The deterministic Python core in `agent/` runs locally without AWS credentials. It is the safe baseline for tests and demos while the AWS Strands/Bedrock access is being configured. `agent/strands_adapter.py` provides the Strands tool and `agent/agentcore_app.py` provides the Bedrock AgentCore Python runtime entry point.
+
+**Language choice:** the mobile SignBee UI is TypeScript/Expo, but this standalone agent service uses Python because the repository already has a Python layout and the AgentCore deployment resource provides a direct Python runtime pattern. This keeps UI concerns separate from triage orchestration and lets the AgentCore entry point run independently.
 
 The current implementation does **not** claim to be connected to live interpreter availability, production booking, or an AI model until those services are configured. The mock dataset in `data/interpreters.json` is intentionally replaceable.
 
@@ -36,7 +38,8 @@ signbee-triage-agent/
 │   ├── classifier.py           # Emergency/scheduled/human-review classification
 │   ├── matcher.py              # Explainable interpreter ranking
 │   ├── workflow.py             # End-to-end deterministic triage workflow
-│   ├── strands_adapter.py      # Optional AWS Strands integration boundary
+│   ├── strands_adapter.py      # Strands agent and explainable triage tool
+│   ├── agentcore_app.py        # Bedrock AgentCore Python runtime entry point
 │   └── tools/                  # Strands tool package boundary
 ├── data/
 │   └── interpreters.json       # Mock interpreter dataset
@@ -78,14 +81,23 @@ python -m agent.main \
   --setting school
 ```
 
-## Strands and Bedrock integration boundary
+## Strands and Bedrock AgentCore integration
 
-When the AWS Strands access is available, install the requirements and configure AWS through the runtime’s secret manager or environment—not by committing credentials:
+The backend uses the official Python pattern: a Strands `Agent` is wrapped by `BedrockAgentCoreApp` and exposed through an `@app.entrypoint` function. Install the runtime dependencies and configure AWS through the runtime’s secret manager or environment—not by committing credentials:
 
 ```bash
 export AWS_REGION=us-east-1
+export BEDROCK_MODEL_ID=<model-id-available-in-your-region>
 python -c "from agent.strands_adapter import create_strands_agent; print(create_strands_agent())"
+python -m agent.agentcore_app
 ```
+
+Local unit tests do not import AgentCore and continue to run without AWS access. The AgentCore endpoint accepts JSON such as `{"prompt":"A patient needs an interpreter urgently in A&E","mode":"in-person"}` at `/invocations`.
+
+Reference resources:
+
+- [Strands Agents Python AgentCore deployment](https://strandsagents.com/docs/user-guide/deploy/deploy_to_bedrock_agentcore/python/)
+- [Strands Agents Amazon Bedrock model provider](https://strandsagents.com/docs/user-guide/concepts/model-providers/amazon-bedrock)
 
 The adapter is intentionally narrow. The agent should call the triage tool, preserve the structured result, explain match reasons, and escalate instead of inventing availability. A future runtime integration can replace the local matcher with authenticated SignBee booking and interpreter services.
 
