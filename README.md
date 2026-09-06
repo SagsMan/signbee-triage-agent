@@ -98,6 +98,11 @@ The adapter is intentionally narrow. The agent should call the triage tool, pres
 - Mock availability is not production availability.
 - No AWS credentials, API keys, or personal data belong in this repository.
 
+## Credits
+
+- **Maryam** — UI/UX Designer for both the SignBee app and SignBee Agent
+- **Sagiru** — Developer
+
 ## Team
 
 - **Sagiru Garba** — Development / implementation
