@@ -1,0 +1,3 @@
+# Optional runtime integration for the AWS Strands adapter.
+strands-agents>=1.0.0
+boto3>=1.35.0

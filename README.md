@@ -1,88 +1,110 @@
 # SignBee Interpreter Triage Agent
 
-> **Agents for Humans Hackathon** · Track: Professional Agents · Built with AWS Strands Agents SDK
+> **Agents for Humans Hackathon** · Track: Professional Agents · Built for AWS Strands Agents SDK and Bedrock AgentCore
 
-An autonomous AI agent that sits in front of SignBee's interpreter booking process — understanding what an institution needs, triaging urgency, matching qualified sign language interpreters, and only looping in a human when a real judgment call is required.
+This repository contains the standalone triage and matching core for SignBee. It is the agent-side companion to the mobile UI in [`SagsMan/SignBEE`](https://github.com/SagsMan/SignBEE).
 
----
+![SignBee triage agent architecture](architecture.png)
 
-## The Problem
+## Why this repository exists
 
-Sign language interpreter access in Nigeria is inconsistent and slow to arrange. Hospitals, courts, schools, and event organizers often don't know what to ask for, how urgent their need is, or which interpreter is right for their context. That triage work is entirely manual today.
+Hospitals, schools, courts, and event organizers often describe an interpreter need in plain language without knowing which details matter. The SignBee Triage Agent turns that request into a safe, explainable workflow:
 
-## What the Agent Does
+1. **Intake** — accept a text request, with voice intake as a future adapter.
+2. **Understanding** — extract setting, urgency signals, language/dialect, mode, duration, and location.
+3. **Urgency classification** — separate emergency work from scheduled work and route ambiguous hospital requests to a human.
+4. **Interpreter matching** — rank qualified interpreters using language, setting experience, availability, and explainable reasons.
+5. **Human escalation** — avoid silent guesses when the request is ambiguous, high risk, or has no suitable match.
+6. **Confirmation loop** — return confirmation, reminder, and post-booking check-in steps.
 
-1. **Intake** — Accepts a booking request in plain language (text or voice)
-2. **Understanding** — Extracts urgency level, setting (medical, legal, educational, event), language/dialect, and duration
-3. **Triage** — Classifies urgency (emergency vs. scheduled), escalates to a human only when a real judgment call is needed
-4. **Matching** — Checks interpreter availability and experience against the request, proposes a shortlist
-5. **Confirmation loop** — Handles follow-up autonomously: confirming time, sending reminders, post-booking check-in
+The companion SignBEE app now exposes the matching UI flow: request intake, triage state, matched interpreter, monitoring status, and messaging.
 
-## Demo Scenarios
+## Current implementation
 
-| Scenario | Description |
-|---|---|
-| Emergency | Hospital needs an interpreter for a deaf patient in A&E — within the hour |
-| Scheduled | School event organizer booking an interpreter for a graduation ceremony in 3 weeks |
+The deterministic Python core in `agent/` runs locally without AWS credentials. It is the safe baseline for tests and demos while the AWS Strands/Bedrock access is being configured. `agent/strands_adapter.py` provides the optional Strands entry point and wraps the same explainable triage tool.
 
-## Tech Stack
+The current implementation does **not** claim to be connected to live interpreter availability, production booking, or an AI model until those services are configured. The mock dataset in `data/interpreters.json` is intentionally replaceable.
 
-| Layer | Technology |
-|---|---|
-| Agent framework | AWS Strands Agents SDK |
-| Deployment | AWS Bedrock AgentCore |
-| Language | Python |
-| Interpreter data | Mock dataset (5-10 profiles: language, availability, setting experience) |
-| Intake | Text-based (voice as stretch goal) |
+## Project structure
 
-## Project Structure
-
-```
+```text
 signbee-triage-agent/
 ├── agent/
-│   ├── main.py              # Agent entry point
-│   ├── intake.py            # Request parsing & extraction
-│   ├── classifier.py        # Urgency classification logic
-│   ├── matcher.py           # Interpreter matching logic
-│   └── tools/               # Strands tool definitions
+│   ├── main.py                 # CLI entry point
+│   ├── models.py               # Request, interpreter, match, and result types
+│   ├── intake.py               # Plain-language request understanding
+│   ├── classifier.py           # Emergency/scheduled/human-review classification
+│   ├── matcher.py              # Explainable interpreter ranking
+│   ├── workflow.py             # End-to-end deterministic triage workflow
+│   ├── strands_adapter.py      # Optional AWS Strands integration boundary
+│   └── tools/                  # Strands tool package boundary
 ├── data/
-│   └── interpreters.json    # Mock interpreter dataset
+│   └── interpreters.json       # Mock interpreter dataset
 ├── tests/
-│   ├── test_emergency.py    # Emergency scenario tests
-│   └── test_scheduled.py    # Scheduled scenario tests
-├── architecture.png         # System architecture diagram
+│   ├── test_emergency.py       # Emergency and escalation scenarios
+│   └── test_scheduled.py       # Scheduled matching scenario
+├── architecture.png            # Architecture diagram
 ├── requirements.txt
 └── README.md
 ```
 
-## Setup & Running
+## Setup and local run
 
 ```bash
-# Clone the repo
 git clone https://github.com/SagsMan/signbee-triage-agent.git
 cd signbee-triage-agent
-
-# Install dependencies
+python -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
-
-# Set environment variables
-export AWS_REGION=us-east-1
-export AWS_ACCESS_KEY_ID=your_key
-export AWS_SECRET_ACCESS_KEY=your_secret
-
-# Run the agent
-python agent/main.py
+python -m unittest discover -s tests -v
 ```
 
-## License
+Run a local request without AWS access:
 
-MIT — see LICENSE
+```bash
+python -m agent.main \
+  "A patient needs an interpreter urgently in A&E within the hour" \
+  --language ASL \
+  --mode in-person \
+  --location "Lagos hospital"
+```
+
+Or run the scheduled school scenario:
+
+```bash
+python -m agent.main \
+  "A school graduation needs a Nigerian Sign Language interpreter in three weeks" \
+  --language NSL \
+  --setting school
+```
+
+## Strands and Bedrock integration boundary
+
+When the AWS Strands access is available, install the requirements and configure AWS through the runtime’s secret manager or environment—not by committing credentials:
+
+```bash
+export AWS_REGION=us-east-1
+python -c "from agent.strands_adapter import create_strands_agent; print(create_strands_agent())"
+```
+
+The adapter is intentionally narrow. The agent should call the triage tool, preserve the structured result, explain match reasons, and escalate instead of inventing availability. A future runtime integration can replace the local matcher with authenticated SignBee booking and interpreter services.
+
+## Safety and escalation rules
+
+- Emergency language is surfaced explicitly; it is not hidden behind a score.
+- Ambiguous hospital requests require human confirmation.
+- Missing language or no suitable match is visible in the result.
+- Match results include reasons so a coordinator can inspect the recommendation.
+- Mock availability is not production availability.
+- No AWS credentials, API keys, or personal data belong in this repository.
 
 ## Team
 
 - **Sagiru Garba** — Development / implementation
 - **Maryam Bola** — Product / agent design
 
----
+## License
 
-Built for the Agents for Humans Hackathon · Submissions close September 14, 2026
+MIT — see [LICENSE](LICENSE).
+
+Built for the Agents for Humans Hackathon · Submissions close September 14, 2026.

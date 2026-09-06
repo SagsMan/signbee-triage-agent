@@ -1,0 +1,57 @@
+[
+  {
+    "id": "aisha-k",
+    "name": "Aisha K.",
+    "languages": ["ASL", "American Sign Language"],
+    "settings": ["hospital", "event"],
+    "availability": "available_now",
+    "available_at": "now",
+    "location": "Lagos, Nigeria",
+    "experience_years": 8,
+    "specialties": ["medical", "virtual"]
+  },
+  {
+    "id": "daniel-m",
+    "name": "Daniel M.",
+    "languages": ["NSL", "Nigerian Sign Language"],
+    "settings": ["school", "event"],
+    "availability": "today",
+    "available_at": "2:00 PM",
+    "location": "Abuja, Nigeria",
+    "experience_years": 6,
+    "specialties": ["education", "virtual"]
+  },
+  {
+    "id": "fatima-r",
+    "name": "Fatima R.",
+    "languages": ["ArSL", "Arabic Sign Language"],
+    "settings": ["court", "event"],
+    "availability": "tomorrow",
+    "available_at": "10:00 AM",
+    "location": "Kano, Nigeria",
+    "experience_years": 10,
+    "specialties": ["legal", "conference"]
+  },
+  {
+    "id": "mary-olayemi",
+    "name": "Mary Olayemi",
+    "languages": ["ASL", "NSL"],
+    "settings": ["hospital", "school", "event"],
+    "availability": "available_now",
+    "available_at": "now",
+    "location": "Lagos, Nigeria",
+    "experience_years": 8,
+    "specialties": ["medical", "education", "virtual"]
+  },
+  {
+    "id": "steven-aina",
+    "name": "Steven Aina",
+    "languages": ["BSL", "NSL"],
+    "settings": ["school", "event"],
+    "availability": "today",
+    "available_at": "2:00 PM",
+    "location": "Abuja, Nigeria",
+    "experience_years": 6,
+    "specialties": ["business", "virtual"]
+  }
+]
