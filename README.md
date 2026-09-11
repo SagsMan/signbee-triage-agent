@@ -81,6 +81,27 @@ python -m agent.main \
   --setting school
 ```
 
+## Agent screen demo
+
+The repository includes a standalone, mobile-first demo of the three SignBee
+Agent screens from the companion app:
+
+1. Request intake — choose In-person or Virtual and describe the situation.
+2. Matching — show the agent reading, filtering, and ranking the request.
+3. Confirmed — show the best match, explain why it was selected, and show the
+   SignBee Agent monitoring state.
+
+The UI calls the deterministic triage workflow in this repository, so it can
+be demonstrated without AWS credentials:
+
+```bash
+python demo_server.py
+```
+
+Open `http://127.0.0.1:8000` in a browser. The demo uses the SignBee design
+tokens already used by the app (`#1A1340`, `#AAFF00`, and `#E8FFB0`) and keeps
+the general SignBEE marketplace screens out of this agent repository.
+
 ## Strands and Bedrock AgentCore integration
 
 The backend uses the official Python pattern: a Strands `Agent` is wrapped by `BedrockAgentCoreApp` and exposed through an `@app.entrypoint` function. Install the runtime dependencies and configure AWS through the runtime’s secret manager or environment—not by committing credentials:
