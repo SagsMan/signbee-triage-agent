@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#ffffff" />
+    <title>SignBee Agent</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main class="app-shell" aria-live="polite">
+      <section id="request-screen" class="screen">
+        <header class="topbar">
+          <h1>SignBee Agent</h1>
+          <button class="icon-button" data-action="close" aria-label="Close">
+            ×
+          </button>
+        </header>
+
+        <div class="screen-copy">
+          <p class="eyebrow">Interpreter matching</p>
+          <h2>Tell us what you need.</h2>
+          <p class="muted">
+            SignBee Agent will understand the request and find the best fit.
+          </p>
+        </div>
+
+        <div class="mode-switch" role="tablist" aria-label="Session type">
+          <button class="mode-button is-active" data-mode="in-person" role="tab">
+            In-person
+          </button>
+          <button class="mode-button" data-mode="virtual" role="tab">
+            Virtual
+          </button>
+        </div>
+
+        <form id="request-form">
+          <label class="field">
+            <span>What do you need help with?</span>
+            <textarea
+              id="situation"
+              rows="5"
+              placeholder="e.g. I need an interpreter for a hospital appointment..."
+              required
+            ></textarea>
+          </label>
+
+          <label class="field">
+            <span id="destination-label">Where are you?</span>
+            <input
+              id="destination"
+              type="text"
+              placeholder="e.g. 40 GRA Road, Beside Kwara Hotel"
+            />
+          </label>
+
+          <div class="field-row">
+            <label class="field">
+              <span>Sign language</span>
+              <input id="language" type="text" placeholder="e.g. ASL or NSL" />
+            </label>
+            <label class="field">
+              <span>Setting</span>
+              <select id="setting">
+                <option value="other">Other</option>
+                <option value="hospital">Hospital</option>
+                <option value="school">School</option>
+                <option value="event">Event</option>
+                <option value="court">Court</option>
+              </select>
+            </label>
+          </div>
+
+          <button class="primary-button" type="submit">
+            <span>Find an interpreter</span>
+            <span aria-hidden="true">→</span>
+          </button>
+        </form>
+      </section>
+
+      <section id="matching-screen" class="screen is-hidden">
+        <header class="topbar">
+          <h1>SignBee Agent</h1>
+          <button class="icon-button" data-action="cancel" aria-label="Cancel">
+            ×
+          </button>
+        </header>
+
+        <div class="matching-center">
+          <p class="eyebrow">Working on it</p>
+          <h2>Triaging your request <span id="matching-seconds">· 6s</span></h2>
+          <div class="status-card">
+            <div class="status-row" data-status="read">
+              <span class="status-icon">✓</span>
+              <span>Read your request</span>
+            </div>
+            <div class="status-row" data-status="filter">
+              <span class="status-icon">✓</span>
+              <span>Filtered for interpreters who are free now</span>
+            </div>
+            <div class="status-row" data-status="rank">
+              <span class="status-icon">✓</span>
+              <span>Ranking by distance &amp; fit</span>
+            </div>
+          </div>
+          <p class="muted">Usually matched in under 30 seconds</p>
+          <div class="progress-track" aria-label="Matching progress">
+            <div class="progress-bar"></div>
+          </div>
+        </div>
+
+        <button class="secondary-button" data-action="cancel">Cancel</button>
+      </section>
+
+      <section id="confirmed-screen" class="screen is-hidden">
+        <header class="topbar">
+          <h1>SignBee Agent</h1>
+          <button class="icon-button" data-action="close" aria-label="Close">
+            ×
+          </button>
+        </header>
+
+        <div class="confirmed-center">
+          <div class="success-icon">✓</div>
+          <p class="eyebrow">Match found</p>
+          <h2 id="confirmed-title">Your interpreter is ready</h2>
+          <p id="confirmed-subtitle" class="muted"></p>
+
+          <div id="match-card" class="info-card"></div>
+          <div class="agent-card">
+            <div class="agent-card-icon">✦</div>
+            <div>
+              <strong>SignBee Agent is monitoring.</strong>
+              <p id="monitoring-copy">
+                If your interpreter is delayed, we’ll help you find another
+                match.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="confirmed-actions">
+          <button id="message-button" class="primary-button" type="button">
+            Message interpreter
+          </button>
+          <button class="link-button" data-action="close">Back to Home</button>
+        </div>
+      </section>
+
+      <p id="error-message" class="error-message is-hidden" role="alert"></p>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>
