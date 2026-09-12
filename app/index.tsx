@@ -8,10 +8,12 @@ import {
   StatusBar,
   StyleSheet,
   Text,
+  TextInput,
   View,
   useWindowDimensions,
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -451,6 +453,9 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
   const [selectedTime, setSelectedTime] = useState<Date | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [showTimePicker, setShowTimePicker] = useState(false);
+  const [servicePurpose, setServicePurpose] = useState('Medical');
+  const [notes, setNotes] = useState('');
+  const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [openField, setOpenField] = useState<BookingField | null>(null);
 
   const formatDate = (value: Date | null) => {
@@ -478,6 +483,21 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
     setShowTimePicker(false);
     if (event.type === 'set' && value) {
       setSelectedTime(value);
+    }
+  };
+
+  const pickImage = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      allowsEditing: true,
+      quality: 0.8,
+    });
+
+    if (!result.canceled && result.assets[0]) {
+      setAttachedImage(result.assets[0].uri);
     }
   };
 
@@ -807,6 +827,124 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
             setOpenField(null);
           }}
         />
+
+        <View style={bookingStyles.fieldGroup}>
+          <Text style={[bookingStyles.fieldLabel, { color: colors.bodyText }]}>
+            Service Purpose{' '}
+            <Text style={[bookingStyles.required, { color: colors.destructive }]}>
+              *
+            </Text>
+          </Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={bookingStyles.purposeRow}
+          >
+            {['Medical', 'Concert', 'Religion', 'Business'].map((purpose) => {
+              const active = servicePurpose === purpose;
+              return (
+                <Pressable
+                  key={purpose}
+                  onPress={() => setServicePurpose(purpose)}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: active }}
+                  accessibilityLabel={`Choose ${purpose.toLowerCase()} service purpose`}
+                  style={[
+                    bookingStyles.purposeChip,
+                    {
+                      backgroundColor: active ? colors.brandInk : colors.softGray,
+                    },
+                  ]}
+                >
+                  <Text
+                    style={[
+                      bookingStyles.purposeText,
+                      { color: active ? colors.foreground : colors.mutedForeground },
+                    ]}
+                  >
+                    {purpose}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
+        <View style={bookingStyles.fieldGroup}>
+          <Text style={[bookingStyles.fieldLabel, { color: colors.bodyText }]}>
+            Additional Notes{' '}
+            <Text style={[bookingStyles.optional, { color: colors.mutedForeground }]}>
+              (Optional)
+            </Text>
+          </Text>
+          <TextInput
+            multiline
+            numberOfLines={4}
+            value={notes}
+            onChangeText={setNotes}
+            placeholder="e.g Interpreter should arrive 15 minutes early for setup."
+            placeholderTextColor={colors.placeholder}
+            style={[
+              bookingStyles.notesInput,
+              {
+                borderColor: colors.fieldBorder,
+                color: colors.bodyText,
+              },
+            ]}
+            textAlignVertical="top"
+            accessibilityLabel="Additional notes"
+          />
+        </View>
+
+        <View style={bookingStyles.fieldGroup}>
+          <Text style={[bookingStyles.fieldLabel, { color: colors.bodyText }]}>
+            Attach image{' '}
+            <Text style={[bookingStyles.optional, { color: colors.mutedForeground }]}>
+              (Optional)
+            </Text>
+          </Text>
+          <Pressable
+            onPress={pickImage}
+            accessibilityRole="button"
+            accessibilityLabel={attachedImage ? 'Change attached image' : 'Choose image'}
+            style={({ pressed }) => [
+              bookingStyles.attachField,
+              { borderColor: colors.fieldBorder },
+              pressed && styles.pressed,
+            ]}
+          >
+            {attachedImage ? (
+              <Image
+                source={{ uri: attachedImage }}
+                resizeMode="cover"
+                style={bookingStyles.attachmentPreview}
+                accessibilityLabel="Selected attachment preview"
+              />
+            ) : (
+              <Ionicons name="cloud-upload-outline" size={19} color={colors.mutedForeground} />
+            )}
+            <Text style={[bookingStyles.attachText, { color: colors.mutedForeground }]}>
+              {attachedImage ? 'Change image' : 'Choose image'}
+            </Text>
+          </Pressable>
+        </View>
+
+        <Pressable
+          onPress={() => {
+            void Haptics.selectionAsync();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Find interpreters"
+          style={({ pressed }) => [
+            bookingStyles.findButton,
+            { backgroundColor: colors.tint },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={[bookingStyles.findButtonText, { color: colors.brandInk }]}>
+            Find Interpreters
+          </Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -1148,6 +1286,20 @@ const bookingStyles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '500',
   },
+  purposeRow: {
+    gap: 8,
+    paddingRight: 12,
+  },
+  purposeChip: {
+    borderRadius: 18,
+    minHeight: 34,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+  },
+  purposeText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
   fieldGroup: {
     marginTop: 32,
   },
@@ -1158,6 +1310,10 @@ const bookingStyles = StyleSheet.create({
     marginBottom: 13,
   },
   required: {
+  },
+  optional: {
+    fontSize: 14,
+    fontWeight: '400',
   },
   selectField: {
     alignItems: 'center',
@@ -1221,5 +1377,45 @@ const bookingStyles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     lineHeight: 22,
+  },
+  notesInput: {
+    borderRadius: 14,
+    borderWidth: 1,
+    fontSize: 15,
+    lineHeight: 21,
+    minHeight: 96,
+    paddingHorizontal: 14,
+    paddingTop: 14,
+  },
+  attachField: {
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'center',
+    minHeight: 62,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+  },
+  attachmentPreview: {
+    borderRadius: 6,
+    height: 38,
+    marginRight: 10,
+    width: 38,
+  },
+  attachText: {
+    fontSize: 15,
+    marginLeft: 8,
+  },
+  findButton: {
+    alignItems: 'center',
+    borderRadius: 14,
+    justifyContent: 'center',
+    marginTop: 32,
+    minHeight: 53,
+  },
+  findButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
   },
 });
