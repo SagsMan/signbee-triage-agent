@@ -12,6 +12,8 @@ import { useColors } from '@/hooks/useColors';
 
 const signbeeMark = require('@/assets/images/signbee-mark.png');
 const accessibilityMark = require('@/assets/images/accessibility-mark.png');
+const locationMark = require('@/assets/images/location-mark.png');
+const topSignMark = require('@/assets/images/top-sign-mark.png');
 const TRACE_DOT_COUNT = 7;
 const TRACE_DOT_SIZE = 3;
 const TRACE_DOT_GAP = 3;
@@ -27,6 +29,8 @@ export default function SignBeeSplashScreen() {
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const markSize = Math.min(Math.max(width * 0.13, 50), 64);
   const accessibilitySize = Math.min(Math.max(width * 0.145, 58), 72);
+  const locationIconSize = accessibilitySize * 0.56;
+  const topSignSize = Math.min(Math.max(width * 0.18, 64), 80);
 
   useEffect(() => {
     const tracing = Animated.loop(
@@ -67,6 +71,24 @@ export default function SignBeeSplashScreen() {
 
       <View
         style={[
+          styles.topSignMark,
+          {
+            width: topSignSize,
+            height: topSignSize,
+            top: topInset + height * 0.19,
+          },
+        ]}
+      >
+        <Image
+          source={topSignMark}
+          resizeMode="contain"
+          style={styles.fill}
+          accessibilityLabel="Sign icon"
+        />
+      </View>
+
+      <View
+        style={[
           styles.accessibilityMark,
           {
             width: accessibilitySize,
@@ -81,6 +103,34 @@ export default function SignBeeSplashScreen() {
           resizeMode="contain"
           style={styles.fill}
           accessibilityLabel="Accessibility"
+        />
+      </View>
+
+      <View
+        style={[
+          styles.locationMark,
+          {
+            width: accessibilitySize,
+            height: accessibilitySize,
+            right: Math.max(width * 0.08, 24),
+            top: topInset + height * 0.35,
+          },
+        ]}
+      >
+        <View
+          style={[
+            styles.locationBubble,
+            { backgroundColor: colors.locationBubble },
+          ]}
+        />
+        <Image
+          source={locationMark}
+          resizeMode="contain"
+          style={{
+            width: locationIconSize,
+            height: locationIconSize,
+          }}
+          accessibilityLabel="Location"
         />
       </View>
 
@@ -151,6 +201,18 @@ const styles = StyleSheet.create({
   },
   accessibilityMark: {
     position: 'absolute',
+  },
+  topSignMark: {
+    position: 'absolute',
+  },
+  locationMark: {
+    position: 'absolute',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  locationBubble: {
+    ...StyleSheet.absoluteFill,
+    borderRadius: 999,
   },
   fill: {
     width: '100%',
