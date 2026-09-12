@@ -151,19 +151,13 @@ Built for the Agents for Humans Hackathon · Submissions close September 14, 202
 <!-- signbee-agent-interface -->
 ## SignBee Agent interface
 
-The SignBee Agent is the client-facing request and triage flow for connecting people with a qualified human interpreter, whether the request is in-person or virtual. The reference screens below capture the current mobile interaction direction.
+The SignBee Agent is the client-facing request and triage flow for connecting people with a qualified human interpreter, whether the request is in-person or virtual. The complete reference gallery below mirrors the screens supplied for the Agent interface.
 
 [Open the SignBee Agent Figma design](https://www.figma.com/design/jlwNxDyjd8rrAq3O1Poxrh/SignBee--Copy-?node-id=508-375&t=FBDmQw7TI4QPlodH-0)
 
-### Interface reference
+### Complete interface reference
 
-![SignBee Agent conversation](docs/screens/signbee-agent-chat.png)
-
-![SignBee Agent in-person request](docs/screens/signbee-agent-in-person.png)
-
-![SignBee Agent virtual request](docs/screens/signbee-agent-virtual.png)
-
-![SignBee Agent triage progress](docs/screens/signbee-agent-triage.png)
+![SignBee Agent interface screen 01](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-01.png)\n\n![SignBee Agent interface screen 02](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-02.png)\n\n![SignBee Agent interface screen 03](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-03.png)\n\n![SignBee Agent interface screen 04](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-04.png)\n\n![SignBee Agent interface screen 05](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-05.png)\n\n![SignBee Agent interface screen 06](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-06.png)\n\n![SignBee Agent interface screen 07](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-07.png)\n\n![SignBee Agent interface screen 08](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-08.png)\n\n![SignBee Agent interface screen 09](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-09.png)\n\n![SignBee Agent interface screen 10](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-10.png)\n\n![SignBee Agent interface screen 11](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-11.png)\n\n![SignBee Agent interface screen 12](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-12.png)\n\n![SignBee Agent interface screen 13](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-13.png)\n\n![SignBee Agent interface screen 14](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-14.png)\n\n![SignBee Agent interface screen 15](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-15.png)\n\n![SignBee Agent interface screen 16](https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-16.png)
 
 ### Frontend and backend direction
 
