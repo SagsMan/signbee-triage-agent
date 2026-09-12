@@ -445,9 +445,10 @@ function SignBeeOnboardingScreen({ onNext }: { onNext: () => void }) {
 type BookingField = 'location' | 'language' | 'duration';
 
 type InterpreterFilters = {
-  languageType: string;
-  availability: string;
+  mode: 'in-person' | 'virtual';
+  situation: string;
   location: string;
+  preferredPlatform: string;
 };
 
 function BookingScreen({ onBack }: { onBack: () => void }) {
@@ -466,6 +467,7 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [openField, setOpenField] = useState<BookingField | null>(null);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [showTriageSheet, setShowTriageSheet] = useState(false);
   const [appliedFilters, setAppliedFilters] = useState<InterpreterFilters | null>(
     null,
   );
@@ -959,7 +961,11 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
                 numberOfLines={1}
                 style={[bookingStyles.appliedFilterSummary, { color: colors.bodyText }]}
               >
-                {[appliedFilters.languageType, appliedFilters.availability, appliedFilters.location]
+                {[
+                  appliedFilters.mode === 'in-person' ? 'In-person' : 'Virtual',
+                  appliedFilters.situation,
+                  appliedFilters.location || appliedFilters.preferredPlatform,
+                ]
                   .filter(Boolean)
                   .join(' · ')}
               </Text>
@@ -998,12 +1004,19 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
       <InterpreterFilterSheet
         visible={showFilterSheet}
         initialFilters={appliedFilters}
+        defaultMode={mode}
         onClose={() => setShowFilterSheet(false)}
         onApply={(filters) => {
           setAppliedFilters(filters);
+          setMode(filters.mode);
           setShowFilterSheet(false);
+          setShowTriageSheet(true);
           void Haptics.selectionAsync();
         }}
+      />
+      <TriageProgressSheet
+        visible={showTriageSheet}
+        onClose={() => setShowTriageSheet(false)}
       />
     </View>
   );
@@ -1098,42 +1111,34 @@ function BookingSelectField({
 function InterpreterFilterSheet({
   visible,
   initialFilters,
+  defaultMode,
   onClose,
   onApply,
 }: {
   visible: boolean;
   initialFilters: InterpreterFilters | null;
+  defaultMode: 'in-person' | 'virtual';
   onClose: () => void;
   onApply: (filters: InterpreterFilters) => void;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const [languageType, setLanguageType] = useState(
-    initialFilters?.languageType || 'NSL',
+  const [mode, setMode] = useState<'in-person' | 'virtual'>(
+    initialFilters?.mode || defaultMode,
   );
-  const [availability, setAvailability] = useState(
-    initialFilters?.availability || '',
-  );
+  const [situation, setSituation] = useState(initialFilters?.situation || '');
   const [location, setLocation] = useState(initialFilters?.location || '');
-  const [showAvailability, setShowAvailability] = useState(false);
+  const [preferredPlatform, setPreferredPlatform] = useState(
+    initialFilters?.preferredPlatform || '',
+  );
 
   useEffect(() => {
     if (!visible) return;
-    setLanguageType(initialFilters?.languageType || 'NSL');
-    setAvailability(initialFilters?.availability || '');
+    setMode(initialFilters?.mode || defaultMode);
+    setSituation(initialFilters?.situation || '');
     setLocation(initialFilters?.location || '');
-    setShowAvailability(false);
-  }, [initialFilters, visible]);
-
-  const languageTypes = ['NSL', 'BSL', 'ASL', 'LSF', 'CSL'];
-  const availabilityOptions = ['Available now', 'Within 1 hour', 'Any availability'];
-
-  const clearFilters = () => {
-    setLanguageType('');
-    setAvailability('');
-    setLocation('');
-    setShowAvailability(false);
-  };
+    setPreferredPlatform(initialFilters?.preferredPlatform || '');
+  }, [defaultMode, initialFilters, visible]);
 
   return (
     <Modal
@@ -1163,7 +1168,7 @@ function InterpreterFilterSheet({
               style={[filterSheetStyles.title, { color: colors.bodyText }]}
               accessibilityRole="header"
             >
-              Filter Interpreters
+              SignBee Agent
             </Text>
             <Pressable
               onPress={onClose}
@@ -1192,165 +1197,145 @@ function InterpreterFilterSheet({
             bottomOffset={96}
             showsVerticalScrollIndicator={false}
           >
-            <Text style={[filterSheetStyles.sectionLabel, { color: colors.bodyText }]}>
-              Language type
-            </Text>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={filterSheetStyles.languageRow}
-            >
-              {languageTypes.map((type) => {
-                const selected = type === languageType;
+            <View style={filterSheetStyles.modeRow}>
+              {(['in-person', 'virtual'] as const).map((option) => {
+                const selected = mode === option;
+                const label = option === 'in-person' ? 'In-person' : 'Virtual';
                 return (
                   <Pressable
-                    key={type}
-                    onPress={() => setLanguageType(type)}
+                    key={option}
+                    onPress={() => setMode(option)}
                     accessibilityRole="button"
                     accessibilityState={{ selected }}
-                    accessibilityLabel={`${selected ? 'Selected ' : ''}${type} language type`}
+                    accessibilityLabel={`Choose ${label.toLowerCase()} interpreting`}
                     style={[
-                      filterSheetStyles.languageChip,
+                      filterSheetStyles.modeOption,
                       {
                         backgroundColor: selected
+                          ? colors.onboardingBackground
+                          : colors.softGray,
+                        borderBottomColor: selected
                           ? colors.tint
-                          : colors.onboardingBackground,
-                        borderColor: selected ? colors.tint : colors.softGray,
+                          : 'transparent',
                       },
                     ]}
                   >
-                    {selected && (
-                      <Ionicons name="checkmark" size={18} color={colors.brandInk} />
-                    )}
                     <Text
                       style={[
-                        filterSheetStyles.languageText,
+                        filterSheetStyles.modeText,
                         {
                           color: selected
-                            ? colors.brandInk
+                            ? colors.bodyText
                             : colors.placeholder,
                         },
                       ]}
                     >
-                      {type}
+                      {label}
                     </Text>
                   </Pressable>
                 );
               })}
-            </ScrollView>
+            </View>
 
-            <Text style={[filterSheetStyles.sectionLabel, { color: colors.bodyText }]}>
-              Availability
+            <Text style={[filterSheetStyles.sectionLabel, { color: colors.foreground }]}>
+              What's the situation?
             </Text>
-            <View>
+            <TextInput
+              multiline
+              numberOfLines={4}
+              value={situation}
+              onChangeText={setSituation}
+              placeholder="e.g I need an interpreter urgently, my patient just came in for an emergency consultation and can’t communicate..."
+              placeholderTextColor={colors.placeholder}
+              style={[
+                filterSheetStyles.situationInput,
+                { borderColor: colors.fieldBorder, color: colors.bodyText },
+                Platform.OS === 'web' &&
+                  ({ resize: 'vertical' } as unknown as object),
+              ]}
+              textAlignVertical="top"
+              accessibilityLabel="Describe the situation"
+            />
+
+            <Text style={[filterSheetStyles.sectionLabel, { color: colors.foreground }]}>
+              {mode === 'in-person' ? 'Where are you?' : 'Preferred platform'}
+            </Text>
+            <TextInput
+              value={mode === 'in-person' ? location : preferredPlatform}
+              onChangeText={
+                mode === 'in-person' ? setLocation : setPreferredPlatform
+              }
+              placeholder={
+                mode === 'in-person'
+                  ? 'e.g 40 GRA Road, Beside Kwara Hotel'
+                  : 'e.g Zoom, Google Meet, or WhatsApp Video'
+              }
+              placeholderTextColor={colors.placeholder}
+              style={[
+                filterSheetStyles.singleLineInput,
+                { borderColor: colors.fieldBorder, color: colors.bodyText },
+              ]}
+              accessibilityLabel={
+                mode === 'in-person'
+                  ? 'Interpreter location'
+                  : 'Preferred video platform'
+              }
+              returnKeyType="done"
+            />
+
+            {mode === 'in-person' && (
               <Pressable
-                onPress={() => setShowAvailability((current) => !current)}
+                onPress={() => setLocation('Current location')}
                 accessibilityRole="button"
-                accessibilityLabel="Choose interpreter availability"
+                accessibilityLabel="Use my current location"
                 style={({ pressed }) => [
-                  filterSheetStyles.selectField,
-                  { borderColor: colors.fieldBorder },
+                  filterSheetStyles.currentLocationButton,
                   pressed && styles.pressed,
                 ]}
               >
+                <Ionicons
+                  name="location-outline"
+                  size={25}
+                  color={colors.locationGreen}
+                />
                 <Text
                   style={[
-                    filterSheetStyles.selectText,
-                    {
-                      color: availability
-                        ? colors.bodyText
-                        : colors.placeholder,
-                    },
+                    filterSheetStyles.currentLocationText,
+                    { color: colors.bodyText },
                   ]}
                 >
-                  {availability || 'Choose option'}
+                  Use my current location
                 </Text>
-                <Ionicons
-                  name={showAvailability ? 'chevron-up' : 'chevron-down'}
-                  size={21}
-                  color={colors.mutedForeground}
-                />
               </Pressable>
-              {showAvailability && (
-                <View
-                  style={[
-                    filterSheetStyles.dropdown,
-                    {
-                      backgroundColor: colors.onboardingBackground,
-                      borderColor: colors.fieldBorder,
-                    },
-                  ]}
-                >
-                  {availabilityOptions.map((option) => (
-                    <Pressable
-                      key={option}
-                      onPress={() => {
-                        setAvailability(option);
-                        setShowAvailability(false);
-                      }}
-                      style={({ pressed }) => [
-                        filterSheetStyles.dropdownOption,
-                        pressed && { backgroundColor: colors.softGreen },
-                      ]}
-                    >
-                      <Text
-                        style={[
-                          filterSheetStyles.dropdownText,
-                          { color: colors.bodyText },
-                        ]}
-                      >
-                        {option}
-                      </Text>
-                    </Pressable>
-                  ))}
-                </View>
-              )}
-            </View>
-
-            <Text style={[filterSheetStyles.sectionLabel, { color: colors.bodyText }]}>
-              Location
-            </Text>
-            <TextInput
-              value={location}
-              onChangeText={setLocation}
-              placeholder="e.g 40 GRA Road, Beside Kwara Hotel"
-              placeholderTextColor={colors.placeholder}
-              style={[
-                filterSheetStyles.locationInput,
-                {
-                  borderColor: colors.fieldBorder,
-                  color: colors.bodyText,
-                },
-              ]}
-              accessibilityLabel="Interpreter location"
-              returnKeyType="done"
-            />
+            )}
           </KeyboardAwareScrollViewCompat>
 
           <View style={filterSheetStyles.footer}>
             <Pressable
-              onPress={clearFilters}
+              onPress={onClose}
               accessibilityRole="button"
-              accessibilityLabel="Clear all interpreter filters"
+              accessibilityLabel="Cancel interpreter filters"
               style={({ pressed }) => [
-                filterSheetStyles.clearButton,
+                filterSheetStyles.cancelButton,
                 pressed && styles.pressed,
               ]}
             >
-              <Text style={[filterSheetStyles.clearText, { color: colors.brandInk }]}>
-                Clear all
+              <Text style={[filterSheetStyles.cancelText, { color: colors.brandInk }]}>
+                Cancel
               </Text>
             </Pressable>
             <Pressable
-              onPress={() =>
+              onPress={() => {
                 onApply({
-                  languageType,
-                  availability,
-                  location: location.trim(),
-                })
-              }
+                  mode,
+                  situation: situation.trim(),
+                  location: mode === 'in-person' ? location.trim() : '',
+                  preferredPlatform:
+                    mode === 'virtual' ? preferredPlatform.trim() : '',
+                });
+              }}
               accessibilityRole="button"
-              accessibilityLabel="Apply interpreter filters"
+              accessibilityLabel="Submit interpreter request"
               style={({ pressed }) => [
                 filterSheetStyles.applyButton,
                 { backgroundColor: colors.tint },
@@ -1358,7 +1343,7 @@ function InterpreterFilterSheet({
               ]}
             >
               <Text style={[filterSheetStyles.applyText, { color: colors.brandInk }]}>
-                Apply
+                Submit
               </Text>
             </Pressable>
           </View>
@@ -1367,6 +1352,315 @@ function InterpreterFilterSheet({
     </Modal>
   );
 }
+
+function TriageProgressSheet({
+  visible,
+  onClose,
+}: {
+  visible: boolean;
+  onClose: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={triageStyles.modalRoot}>
+        <Pressable
+          style={triageStyles.backdrop}
+          onPress={onClose}
+          accessibilityLabel="Close triage progress"
+        />
+        <View
+          style={[
+            triageStyles.sheet,
+            {
+              backgroundColor: colors.onboardingBackground,
+              paddingBottom: Math.max(insets.bottom, 18),
+            },
+          ]}
+          testID="triage-progress-sheet"
+        >
+          <View style={triageStyles.grabber} />
+          <View style={triageStyles.header}>
+            <Text
+              style={[triageStyles.title, { color: colors.foreground }]}
+              accessibilityRole="header"
+            >
+              SignBee Agent
+            </Text>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close triage progress"
+              hitSlop={12}
+              style={({ pressed }) => [
+                triageStyles.closeButton,
+                { backgroundColor: colors.softGray },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="close" size={21} color={colors.foreground} />
+            </Pressable>
+          </View>
+          <View
+            style={[
+              triageStyles.divider,
+              { backgroundColor: colors.divider },
+            ]}
+          />
+
+          <View
+            style={[
+              triageStyles.content,
+              { paddingBottom: Math.max(insets.bottom, 18) + 12 },
+            ]}
+          >
+            <View
+              style={[
+                triageStyles.triageCard,
+                { backgroundColor: colors.triageCard },
+              ]}
+            >
+              <View style={triageStyles.triageCardTitleRow}>
+                <Text style={[triageStyles.triageTitle, { color: colors.foreground }]}>
+                  Triaging your request · 6s
+                </Text>
+                <Ionicons
+                  name="paper-plane-outline"
+                  size={27}
+                  color={colors.foreground}
+                />
+              </View>
+
+              <TriageStep
+                complete
+                title="Read your request"
+                detail="A&E visit · unplanned"
+                colors={colors}
+              />
+              <TriageStep
+                complete
+                title="Filtered for who is free now"
+                detail="42 interpreters scanned"
+                colors={colors}
+              />
+              <TriageStep
+                title="Ranking by distance & fit"
+                detail="Within 5 km of M13"
+                colors={colors}
+              />
+            </View>
+
+            <View
+              style={[
+                triageStyles.progressTrack,
+                { backgroundColor: colors.progressBackground },
+              ]}
+            >
+              <View
+                style={[
+                  triageStyles.progressFill,
+                  { backgroundColor: colors.tint },
+                ]}
+              />
+            </View>
+
+            <Text style={[triageStyles.timingText, { color: colors.triageText }]}>
+              Usually matched in under 30 seconds
+            </Text>
+
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel triage"
+              style={({ pressed }) => [
+                triageStyles.cancelButton,
+                { backgroundColor: colors.triageCancel },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[triageStyles.cancelText, { color: colors.placeholder }]}>
+                Cancel
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function TriageStep({
+  complete = false,
+  title,
+  detail,
+  colors,
+}: {
+  complete?: boolean;
+  title: string;
+  detail: string;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={triageStyles.step}>
+      <View
+        style={[
+          triageStyles.stepIcon,
+          {
+            backgroundColor: complete
+              ? colors.triageCheck
+              : colors.triagePending,
+          },
+        ]}
+      >
+        {complete && (
+          <Ionicons name="checkmark" size={26} color={colors.triageGreen} />
+        )}
+      </View>
+      <View style={triageStyles.stepCopy}>
+        <Text style={[triageStyles.stepTitle, { color: colors.triageText }]}>
+          {title}
+        </Text>
+        <Text style={[triageStyles.stepDetail, { color: colors.triageText }]}>
+          {detail}
+        </Text>
+      </View>
+    </View>
+  );
+}
+
+const triageStyles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(51, 41, 79, 0.08)',
+  },
+  sheet: {
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    flex: 1,
+    maxHeight: '100%',
+    minHeight: '100%',
+    overflow: 'hidden',
+  },
+  grabber: {
+    alignSelf: 'center',
+    backgroundColor: '#F1F0F3',
+    borderRadius: 999,
+    height: 6,
+    marginBottom: 34,
+    marginTop: 16,
+    width: 74,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 42,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.9,
+  },
+  closeButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
+  },
+  divider: {
+    height: 1,
+    marginHorizontal: 42,
+    marginTop: 25,
+  },
+  content: {
+    paddingHorizontal: 42,
+    paddingTop: 48,
+  },
+  triageCard: {
+    borderRadius: 20,
+    paddingHorizontal: 39,
+    paddingVertical: 35,
+  },
+  triageCardTitleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 30,
+  },
+  triageTitle: {
+    fontSize: 23,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+  },
+  step: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 18,
+    marginBottom: 22,
+  },
+  stepIcon: {
+    alignItems: 'center',
+    borderRadius: 7,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  stepCopy: {
+    flex: 1,
+    paddingTop: 1,
+  },
+  stepTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    lineHeight: 27,
+  },
+  stepDetail: {
+    fontSize: 18,
+    lineHeight: 27,
+    marginTop: 4,
+  },
+  progressTrack: {
+    borderRadius: 999,
+    height: 8,
+    marginTop: 38,
+    overflow: 'hidden',
+    width: '100%',
+  },
+  progressFill: {
+    borderRadius: 999,
+    height: '100%',
+    width: '62%',
+  },
+  timingText: {
+    fontSize: 21,
+    fontWeight: '700',
+    marginTop: 27,
+  },
+  cancelButton: {
+    alignItems: 'center',
+    borderRadius: 22,
+    justifyContent: 'center',
+    marginTop: 64,
+    minHeight: 80,
+    width: '100%',
+  },
+  cancelText: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+});
 
 const filterSheetStyles = StyleSheet.create({
   modalRoot: {
@@ -1381,8 +1675,8 @@ const filterSheetStyles = StyleSheet.create({
     borderTopLeftRadius: 30,
     borderTopRightRadius: 30,
     flex: 1,
-    maxHeight: '94%',
-    minHeight: '86%',
+    maxHeight: '100%',
+    minHeight: '100%',
     overflow: 'hidden',
   },
   grabber: {
@@ -1390,120 +1684,115 @@ const filterSheetStyles = StyleSheet.create({
     backgroundColor: '#F1F0F3',
     borderRadius: 999,
     height: 6,
-    marginBottom: 28,
-    marginTop: 14,
+    marginBottom: 34,
+    marginTop: 16,
     width: 74,
   },
   header: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 49,
+    paddingHorizontal: 42,
   },
   title: {
     fontSize: 28,
-    fontWeight: '600',
-    letterSpacing: -0.8,
+    fontWeight: '700',
+    letterSpacing: -0.9,
   },
   closeButton: {
     alignItems: 'center',
     borderRadius: 999,
-    height: 38,
+    height: 36,
     justifyContent: 'center',
-    width: 38,
+    width: 36,
   },
   divider: {
     height: 1,
-    marginHorizontal: 49,
-    marginTop: 26,
+    marginHorizontal: 42,
+    marginTop: 25,
   },
   content: {
-    paddingBottom: 24,
-    paddingHorizontal: 49,
+    paddingBottom: 30,
+    paddingHorizontal: 42,
+    paddingTop: 58,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+  modeOption: {
+    alignItems: 'center',
+    borderBottomWidth: 2,
+    borderRadius: 20,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 68,
+  },
+  modeText: {
+    fontSize: 22,
+    fontWeight: '600',
   },
   sectionLabel: {
     fontSize: 22,
-    fontWeight: '600',
+    fontWeight: '700',
     lineHeight: 28,
-    marginTop: 32,
-    marginBottom: 18,
+    marginBottom: 22,
+    marginTop: 44,
   },
-  languageRow: {
-    gap: 24,
-    paddingRight: 12,
+  situationInput: {
+    borderRadius: 14,
+    borderWidth: 1,
+    fontSize: 20,
+    lineHeight: 28,
+    minHeight: 204,
+    paddingHorizontal: 26,
+    paddingTop: 24,
   },
-  languageChip: {
-    alignItems: 'center',
-    borderRadius: 22,
-    borderWidth: 2,
+  singleLineInput: {
+    borderRadius: 14,
+    borderWidth: 1,
+    fontSize: 20,
+    minHeight: 84,
+    paddingHorizontal: 26,
+  },
+  currentLocationButton: {
+    borderRadius: 12,
     flexDirection: 'row',
-    gap: 4,
-    minHeight: 46,
-    paddingHorizontal: 18,
+    alignItems: 'center',
+    gap: 10,
+    marginTop: 22,
+    paddingVertical: 4,
   },
-  languageText: {
+  currentLocationText: {
     fontSize: 19,
-    fontWeight: '500',
-  },
-  selectField: {
-    alignItems: 'center',
-    borderRadius: 12,
-    borderWidth: 1,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    minHeight: 64,
-    paddingHorizontal: 31,
-  },
-  selectText: {
-    fontSize: 21,
-  },
-  dropdown: {
-    borderRadius: 12,
-    borderWidth: 1,
-    marginTop: 6,
-    overflow: 'hidden',
-  },
-  dropdownOption: {
-    minHeight: 48,
-    justifyContent: 'center',
-    paddingHorizontal: 18,
-  },
-  dropdownText: {
-    fontSize: 16,
-  },
-  locationInput: {
-    borderRadius: 12,
-    borderWidth: 1,
-    fontSize: 18,
-    minHeight: 96,
-    paddingHorizontal: 30,
+    fontWeight: '600',
   },
   footer: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 57,
-    paddingTop: 18,
+    paddingHorizontal: 56,
+    paddingTop: 22,
   },
-  clearButton: {
+  cancelButton: {
     minHeight: 54,
     justifyContent: 'center',
     paddingHorizontal: 8,
   },
-  clearText: {
-    fontSize: 22,
-    fontWeight: '600',
+  cancelText: {
+    fontSize: 23,
+    fontWeight: '700',
   },
   applyButton: {
     alignItems: 'center',
     borderRadius: 28,
     justifyContent: 'center',
-    minHeight: 64,
-    minWidth: 144,
-    paddingHorizontal: 28,
+    minHeight: 68,
+    minWidth: 166,
+    paddingHorizontal: 30,
   },
   applyText: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: '700',
   },
 });

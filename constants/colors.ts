@@ -26,6 +26,13 @@ const colors = {
     fieldBorder: '#D8D3D0',
     placeholder: '#8B858D',
     progressTrack: '#DDD8D4',
+    progressBackground: '#F3EFF7',
+    triageCard: '#F1FBE8',
+    triageCheck: '#D8FBE4',
+    triagePending: '#D8FBE4',
+    triageGreen: '#1AA354',
+    triageText: '#687273',
+    triageCancel: '#F7F2FA',
 
     // Core surfaces
     background: '#AAF70A',
@@ -52,6 +59,7 @@ const colors = {
     accent: '#D8FF86',
     accentForeground: '#000000',
     locationBubble: '#FFDA4D',
+    locationGreen: '#69C443',
 
     // Destructive actions (delete, error states)
     destructive: '#ef4444',
