@@ -296,14 +296,14 @@ function SignBeeOnboardingScreen() {
         {
           paddingTop: topInset + 12,
           paddingBottom: bottomInset + 10,
-          backgroundColor: colors.background,
+          backgroundColor: colors.onboardingBackground,
         },
       ]}
       testID="signbee-onboarding-screen"
     >
       <StatusBar
         barStyle="dark-content"
-        backgroundColor={colors.background}
+        backgroundColor={colors.onboardingBackground}
       />
 
       <View style={styles.header}>
