@@ -25,31 +25,70 @@ export default function SignBeeSplashScreen() {
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
   const traceProgress = useRef(new Animated.Value(0)).current;
+  const traceOpacity = useRef(new Animated.Value(0)).current;
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const markSize = Math.min(Math.max(width * 0.13, 50), 64);
   const accessibilitySize = Math.min(Math.max(width * 0.145, 58), 72);
   const locationIconSize = accessibilitySize * 0.56;
   const topSignSize = Math.min(Math.max(width * 0.18, 64), 80);
+  const lowerIconTop = topInset + height * 0.35;
+  const lowerIconLeft = Math.max(width * 0.08, 24);
+  const lowerIconRight = Math.max(width * 0.08, 24);
+  const lowerIconLeftCenter = lowerIconLeft + accessibilitySize / 2;
+  const lowerIconRightCenter =
+    width - lowerIconRight - accessibilitySize / 2;
 
   useEffect(() => {
     const tracing = Animated.loop(
-      Animated.timing(traceProgress, {
-        toValue: 1,
-        duration: 420,
-        useNativeDriver: Platform.OS !== 'web',
-      }),
+      Animated.sequence([
+        Animated.parallel([
+          Animated.timing(traceProgress, {
+            toValue: 1,
+            duration: 720,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.sequence([
+            Animated.timing(traceOpacity, {
+              toValue: 1,
+              duration: 100,
+              useNativeDriver: Platform.OS !== 'web',
+            }),
+            Animated.delay(520),
+            Animated.timing(traceOpacity, {
+              toValue: 0,
+              duration: 100,
+              useNativeDriver: Platform.OS !== 'web',
+            }),
+          ]),
+        ]),
+        Animated.parallel([
+          Animated.timing(traceProgress, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+          Animated.timing(traceOpacity, {
+            toValue: 0,
+            duration: 0,
+            useNativeDriver: Platform.OS !== 'web',
+          }),
+        ]),
+      ]),
       { iterations: 3 },
     );
 
     tracing.start();
 
     return () => tracing.stop();
-  }, [traceProgress]);
+  }, [traceOpacity, traceProgress]);
 
   const traceTranslateX = traceProgress.interpolate({
     inputRange: [0, 1],
-    outputRange: [-TRACE_TRAIL_WIDTH, markSize],
+    outputRange: [
+      lowerIconLeftCenter - TRACE_TRAIL_WIDTH,
+      lowerIconRightCenter,
+    ],
   });
 
   return (
@@ -93,8 +132,8 @@ export default function SignBeeSplashScreen() {
           {
             width: accessibilitySize,
             height: accessibilitySize,
-            left: Math.max(width * 0.08, 24),
-            top: topInset + height * 0.35,
+            left: lowerIconLeft,
+            top: lowerIconTop,
           },
         ]}
       >
@@ -112,8 +151,8 @@ export default function SignBeeSplashScreen() {
           {
             width: accessibilitySize,
             height: accessibilitySize,
-            right: Math.max(width * 0.08, 24),
-            top: topInset + height * 0.35,
+            right: lowerIconRight,
+            top: lowerIconTop,
           },
         ]}
       >
@@ -134,9 +173,35 @@ export default function SignBeeSplashScreen() {
         />
       </View>
 
+      <Animated.View
+        style={[
+          styles.traceTrail,
+          {
+            top: lowerIconTop + accessibilitySize / 2 - TRACE_DOT_SIZE / 2,
+            opacity: traceOpacity,
+            transform: [{ translateX: traceTranslateX }],
+          },
+        ]}
+      >
+        {Array.from({ length: TRACE_DOT_COUNT }).map((_, index) => (
+          <View
+            key={index}
+            style={[
+              styles.traceDot,
+              {
+                opacity: 1 - index * 0.1,
+                backgroundColor: colors.foreground,
+                marginRight:
+                  index === TRACE_DOT_COUNT - 1 ? 0 : TRACE_DOT_GAP,
+              },
+            ]}
+          />
+        ))}
+      </Animated.View>
+
       <View style={styles.brandLockup}>
         <View
-          style={[styles.markFrame, { width: markSize, height: markSize }]}
+          style={{ width: markSize, height: markSize }}
           accessible
           accessibilityLabel="SignBee mark"
         >
@@ -145,30 +210,6 @@ export default function SignBeeSplashScreen() {
             resizeMode="contain"
             style={styles.fill}
           />
-          <Animated.View
-            style={[
-              styles.traceTrail,
-              {
-                top: markSize * 0.48,
-                transform: [{ translateX: traceTranslateX }],
-              },
-            ]}
-          >
-            {Array.from({ length: TRACE_DOT_COUNT }).map((_, index) => (
-              <View
-                key={index}
-                style={[
-                  styles.traceDot,
-                  {
-                    opacity: 1 - index * 0.1,
-                    backgroundColor: colors.background,
-                    marginRight:
-                      index === TRACE_DOT_COUNT - 1 ? 0 : TRACE_DOT_GAP,
-                  },
-                ]}
-              />
-            ))}
-          </Animated.View>
         </View>
         <Text
           style={[styles.wordmark, { color: colors.foreground }]}
@@ -217,9 +258,6 @@ const styles = StyleSheet.create({
   fill: {
     width: '100%',
     height: '100%',
-  },
-  markFrame: {
-    overflow: 'hidden',
   },
   traceTrail: {
     position: 'absolute',
