@@ -1,6 +1,29 @@
 # SignBee Interpreter Triage Agent
 
-Standalone Python triage and interpreter-matching service for SignBee.
+SignBee has two parts in this repository: a React Native/Expo Go frontend and
+a Python triage and interpreter-matching backend.
+
+## Frontend
+
+The root Expo app is the client-facing surface for the SignBee experience. It
+uses React Native with Expo Router and currently contains a neutral starter
+screen, ready for the intake, matching, status, and messaging flows to be
+added.
+
+```bash
+npm install
+npm run start:tunnel
+```
+
+Scan the printed QR code with Expo Go. The frontend lives in `app/`, with
+`app.json` and `package.json` providing the Expo configuration and scripts.
+
+## Backend
+
+The Python service in `agent/` owns request understanding, urgency
+classification, interpreter matching, human escalation, and the Strands /
+Bedrock AgentCore adapter. It uses `data/interpreters.json` as a replaceable
+local dataset and is covered by the tests in `tests/`.
 
 ## What it does
 
@@ -22,6 +45,9 @@ authenticated service.
 
 ```text
 signbee-triage-agent/
+├── app/
+│   ├── index.tsx              # Expo Go starter screen
+│   └── _layout.tsx            # Expo Router root layout
 ├── agent/
 │   ├── main.py                 # CLI entry point
 │   ├── models.py               # Request and result types
@@ -35,8 +61,11 @@ signbee-triage-agent/
 ├── data/
 │   └── interpreters.json       # Mock interpreter dataset
 ├── tests/
+│   ├── test_demo_server.py
 │   ├── test_emergency.py
 │   └── test_scheduled.py
+├── app.json
+├── package.json
 ├── requirements.txt
 └── README.md
 ```
@@ -51,6 +80,9 @@ source .venv/bin/activate
 pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
+
+Run the frontend and backend independently: use the Expo command above for
+the mobile client, and use the Python commands below for backend requests.
 
 Run an emergency request:
 
