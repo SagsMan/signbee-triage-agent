@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
+  Modal,
   Platform,
   Pressable,
   ScrollView,
@@ -20,6 +21,7 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
+import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
 import { useColors } from '@/hooks/useColors';
 
 const signbeeMark = require('@/assets/images/signbee-mark.png');
@@ -442,6 +444,12 @@ function SignBeeOnboardingScreen({ onNext }: { onNext: () => void }) {
 
 type BookingField = 'location' | 'language' | 'duration';
 
+type InterpreterFilters = {
+  languageType: string;
+  availability: string;
+  location: string;
+};
+
 function BookingScreen({ onBack }: { onBack: () => void }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -457,6 +465,10 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
   const [notes, setNotes] = useState('');
   const [attachedImage, setAttachedImage] = useState<string | null>(null);
   const [openField, setOpenField] = useState<BookingField | null>(null);
+  const [showFilterSheet, setShowFilterSheet] = useState(false);
+  const [appliedFilters, setAppliedFilters] = useState<InterpreterFilters | null>(
+    null,
+  );
 
   const formatDate = (value: Date | null) => {
     if (!value) return 'DD/MM/YY';
@@ -929,9 +941,45 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
           </Pressable>
         </View>
 
+        {appliedFilters && (
+          <View
+            style={[
+              bookingStyles.appliedFilterCard,
+              {
+                backgroundColor: colors.softGreen,
+                borderColor: colors.tint,
+              },
+            ]}
+          >
+            <View style={bookingStyles.appliedFilterCopy}>
+              <Text style={[bookingStyles.appliedFilterTitle, { color: colors.brandInk }]}>
+                Filters applied
+              </Text>
+              <Text
+                numberOfLines={1}
+                style={[bookingStyles.appliedFilterSummary, { color: colors.bodyText }]}
+              >
+                {[appliedFilters.languageType, appliedFilters.availability, appliedFilters.location]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </Text>
+            </View>
+            <Pressable
+              onPress={() => setShowFilterSheet(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Edit interpreter filters"
+              hitSlop={10}
+              style={({ pressed }) => [pressed && styles.pressed]}
+            >
+              <Ionicons name="options-outline" size={22} color={colors.brandInk} />
+            </Pressable>
+          </View>
+        )}
+
         <Pressable
           onPress={() => {
             void Haptics.selectionAsync();
+            setShowFilterSheet(true);
           }}
           accessibilityRole="button"
           accessibilityLabel="Find interpreters"
@@ -946,6 +994,17 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
           </Text>
         </Pressable>
       </ScrollView>
+
+      <InterpreterFilterSheet
+        visible={showFilterSheet}
+        initialFilters={appliedFilters}
+        onClose={() => setShowFilterSheet(false)}
+        onApply={(filters) => {
+          setAppliedFilters(filters);
+          setShowFilterSheet(false);
+          void Haptics.selectionAsync();
+        }}
+      />
     </View>
   );
 }
@@ -1035,6 +1094,419 @@ function BookingSelectField({
     </View>
   );
 }
+
+function InterpreterFilterSheet({
+  visible,
+  initialFilters,
+  onClose,
+  onApply,
+}: {
+  visible: boolean;
+  initialFilters: InterpreterFilters | null;
+  onClose: () => void;
+  onApply: (filters: InterpreterFilters) => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [languageType, setLanguageType] = useState(
+    initialFilters?.languageType || 'NSL',
+  );
+  const [availability, setAvailability] = useState(
+    initialFilters?.availability || '',
+  );
+  const [location, setLocation] = useState(initialFilters?.location || '');
+  const [showAvailability, setShowAvailability] = useState(false);
+
+  useEffect(() => {
+    if (!visible) return;
+    setLanguageType(initialFilters?.languageType || 'NSL');
+    setAvailability(initialFilters?.availability || '');
+    setLocation(initialFilters?.location || '');
+    setShowAvailability(false);
+  }, [initialFilters, visible]);
+
+  const languageTypes = ['NSL', 'BSL', 'ASL', 'LSF', 'CSL'];
+  const availabilityOptions = ['Available now', 'Within 1 hour', 'Any availability'];
+
+  const clearFilters = () => {
+    setLanguageType('');
+    setAvailability('');
+    setLocation('');
+    setShowAvailability(false);
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={filterSheetStyles.modalRoot}>
+        <Pressable
+          style={filterSheetStyles.backdrop}
+          onPress={onClose}
+          accessibilityLabel="Close filter sheet"
+        />
+        <View
+          style={[
+            filterSheetStyles.sheet,
+            {
+              backgroundColor: colors.onboardingBackground,
+              paddingBottom: Math.max(insets.bottom, 18),
+            },
+          ]}
+        >
+          <View style={filterSheetStyles.grabber} />
+          <View style={filterSheetStyles.header}>
+            <Text
+              style={[filterSheetStyles.title, { color: colors.bodyText }]}
+              accessibilityRole="header"
+            >
+              Filter Interpreters
+            </Text>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close filters"
+              hitSlop={12}
+              style={({ pressed }) => [
+                filterSheetStyles.closeButton,
+                { backgroundColor: colors.softGray },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="close" size={22} color={colors.bodyText} />
+            </Pressable>
+          </View>
+          <View
+            style={[
+              filterSheetStyles.divider,
+              { backgroundColor: colors.divider },
+            ]}
+          />
+
+          <KeyboardAwareScrollViewCompat
+            contentContainerStyle={filterSheetStyles.content}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={96}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={[filterSheetStyles.sectionLabel, { color: colors.bodyText }]}>
+              Language type
+            </Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={filterSheetStyles.languageRow}
+            >
+              {languageTypes.map((type) => {
+                const selected = type === languageType;
+                return (
+                  <Pressable
+                    key={type}
+                    onPress={() => setLanguageType(type)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                    accessibilityLabel={`${selected ? 'Selected ' : ''}${type} language type`}
+                    style={[
+                      filterSheetStyles.languageChip,
+                      {
+                        backgroundColor: selected
+                          ? colors.tint
+                          : colors.onboardingBackground,
+                        borderColor: selected ? colors.tint : colors.softGray,
+                      },
+                    ]}
+                  >
+                    {selected && (
+                      <Ionicons name="checkmark" size={18} color={colors.brandInk} />
+                    )}
+                    <Text
+                      style={[
+                        filterSheetStyles.languageText,
+                        {
+                          color: selected
+                            ? colors.brandInk
+                            : colors.placeholder,
+                        },
+                      ]}
+                    >
+                      {type}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+
+            <Text style={[filterSheetStyles.sectionLabel, { color: colors.bodyText }]}>
+              Availability
+            </Text>
+            <View>
+              <Pressable
+                onPress={() => setShowAvailability((current) => !current)}
+                accessibilityRole="button"
+                accessibilityLabel="Choose interpreter availability"
+                style={({ pressed }) => [
+                  filterSheetStyles.selectField,
+                  { borderColor: colors.fieldBorder },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    filterSheetStyles.selectText,
+                    {
+                      color: availability
+                        ? colors.bodyText
+                        : colors.placeholder,
+                    },
+                  ]}
+                >
+                  {availability || 'Choose option'}
+                </Text>
+                <Ionicons
+                  name={showAvailability ? 'chevron-up' : 'chevron-down'}
+                  size={21}
+                  color={colors.mutedForeground}
+                />
+              </Pressable>
+              {showAvailability && (
+                <View
+                  style={[
+                    filterSheetStyles.dropdown,
+                    {
+                      backgroundColor: colors.onboardingBackground,
+                      borderColor: colors.fieldBorder,
+                    },
+                  ]}
+                >
+                  {availabilityOptions.map((option) => (
+                    <Pressable
+                      key={option}
+                      onPress={() => {
+                        setAvailability(option);
+                        setShowAvailability(false);
+                      }}
+                      style={({ pressed }) => [
+                        filterSheetStyles.dropdownOption,
+                        pressed && { backgroundColor: colors.softGreen },
+                      ]}
+                    >
+                      <Text
+                        style={[
+                          filterSheetStyles.dropdownText,
+                          { color: colors.bodyText },
+                        ]}
+                      >
+                        {option}
+                      </Text>
+                    </Pressable>
+                  ))}
+                </View>
+              )}
+            </View>
+
+            <Text style={[filterSheetStyles.sectionLabel, { color: colors.bodyText }]}>
+              Location
+            </Text>
+            <TextInput
+              value={location}
+              onChangeText={setLocation}
+              placeholder="e.g 40 GRA Road, Beside Kwara Hotel"
+              placeholderTextColor={colors.placeholder}
+              style={[
+                filterSheetStyles.locationInput,
+                {
+                  borderColor: colors.fieldBorder,
+                  color: colors.bodyText,
+                },
+              ]}
+              accessibilityLabel="Interpreter location"
+              returnKeyType="done"
+            />
+          </KeyboardAwareScrollViewCompat>
+
+          <View style={filterSheetStyles.footer}>
+            <Pressable
+              onPress={clearFilters}
+              accessibilityRole="button"
+              accessibilityLabel="Clear all interpreter filters"
+              style={({ pressed }) => [
+                filterSheetStyles.clearButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[filterSheetStyles.clearText, { color: colors.brandInk }]}>
+                Clear all
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                onApply({
+                  languageType,
+                  availability,
+                  location: location.trim(),
+                })
+              }
+              accessibilityRole="button"
+              accessibilityLabel="Apply interpreter filters"
+              style={({ pressed }) => [
+                filterSheetStyles.applyButton,
+                { backgroundColor: colors.tint },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[filterSheetStyles.applyText, { color: colors.brandInk }]}>
+                Apply
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+const filterSheetStyles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(51, 41, 79, 0.08)',
+  },
+  sheet: {
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    flex: 1,
+    maxHeight: '94%',
+    minHeight: '86%',
+    overflow: 'hidden',
+  },
+  grabber: {
+    alignSelf: 'center',
+    backgroundColor: '#F1F0F3',
+    borderRadius: 999,
+    height: 6,
+    marginBottom: 28,
+    marginTop: 14,
+    width: 74,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 49,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '600',
+    letterSpacing: -0.8,
+  },
+  closeButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 38,
+    justifyContent: 'center',
+    width: 38,
+  },
+  divider: {
+    height: 1,
+    marginHorizontal: 49,
+    marginTop: 26,
+  },
+  content: {
+    paddingBottom: 24,
+    paddingHorizontal: 49,
+  },
+  sectionLabel: {
+    fontSize: 22,
+    fontWeight: '600',
+    lineHeight: 28,
+    marginTop: 32,
+    marginBottom: 18,
+  },
+  languageRow: {
+    gap: 24,
+    paddingRight: 12,
+  },
+  languageChip: {
+    alignItems: 'center',
+    borderRadius: 22,
+    borderWidth: 2,
+    flexDirection: 'row',
+    gap: 4,
+    minHeight: 46,
+    paddingHorizontal: 18,
+  },
+  languageText: {
+    fontSize: 19,
+    fontWeight: '500',
+  },
+  selectField: {
+    alignItems: 'center',
+    borderRadius: 12,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    minHeight: 64,
+    paddingHorizontal: 31,
+  },
+  selectText: {
+    fontSize: 21,
+  },
+  dropdown: {
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 6,
+    overflow: 'hidden',
+  },
+  dropdownOption: {
+    minHeight: 48,
+    justifyContent: 'center',
+    paddingHorizontal: 18,
+  },
+  dropdownText: {
+    fontSize: 16,
+  },
+  locationInput: {
+    borderRadius: 12,
+    borderWidth: 1,
+    fontSize: 18,
+    minHeight: 96,
+    paddingHorizontal: 30,
+  },
+  footer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 57,
+    paddingTop: 18,
+  },
+  clearButton: {
+    minHeight: 54,
+    justifyContent: 'center',
+    paddingHorizontal: 8,
+  },
+  clearText: {
+    fontSize: 22,
+    fontWeight: '600',
+  },
+  applyButton: {
+    alignItems: 'center',
+    borderRadius: 28,
+    justifyContent: 'center',
+    minHeight: 64,
+    minWidth: 144,
+    paddingHorizontal: 28,
+  },
+  applyText: {
+    fontSize: 22,
+    fontWeight: '700',
+  },
+});
 
 const splashStyles = StyleSheet.create({
   screen: {
@@ -1406,6 +1878,28 @@ const bookingStyles = StyleSheet.create({
   attachText: {
     fontSize: 15,
     marginLeft: 8,
+  },
+  appliedFilterCard: {
+    alignItems: 'center',
+    borderRadius: 14,
+    borderWidth: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 28,
+    minHeight: 68,
+    paddingHorizontal: 16,
+  },
+  appliedFilterCopy: {
+    flex: 1,
+    marginRight: 12,
+  },
+  appliedFilterTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  appliedFilterSummary: {
+    fontSize: 13,
+    marginTop: 4,
   },
   findButton: {
     alignItems: 'center',
