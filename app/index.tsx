@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
@@ -33,6 +33,8 @@ const onboardingRing = require('@/assets/images/onboarding-ring.png');
 const onboardingCharacter = require('@/assets/images/onboarding-character.png');
 const onboardingDotLeft = require('@/assets/images/onboarding-dot-left.png');
 const onboardingDotRight = require('@/assets/images/onboarding-dot-right.png');
+const maryOlayemi = require('@/assets/images/mary-olayemi.png');
+const ratingStar = require('@/assets/images/rating-star.png');
 
 const slides = [
   {
@@ -45,6 +47,7 @@ const slides = [
 export default function SignBeeApp() {
   const [showOnboarding, setShowOnboarding] = useState(Platform.OS === 'web');
   const [showBooking, setShowBooking] = useState(false);
+  const [showMatchScreen, setShowMatchScreen] = useState(false);
 
   useEffect(() => {
     const transitionTimer = setTimeout(() => {
@@ -55,8 +58,16 @@ export default function SignBeeApp() {
   }, []);
 
   if (!showOnboarding) return <SignBeeSplashScreen />;
+  if (showMatchScreen) {
+    return <InterpreterMatchScreen onBack={() => setShowMatchScreen(false)} />;
+  }
   if (showBooking) {
-    return <BookingScreen onBack={() => setShowBooking(false)} />;
+    return (
+      <BookingScreen
+        onBack={() => setShowBooking(false)}
+        onMatched={() => setShowMatchScreen(true)}
+      />
+    );
   }
   return <SignBeeOnboardingScreen onNext={() => setShowBooking(true)} />;
 }
@@ -452,7 +463,13 @@ type InterpreterFilters = {
   preferredPlatform: string;
 };
 
-function BookingScreen({ onBack }: { onBack: () => void }) {
+function BookingScreen({
+  onBack,
+  onMatched,
+}: {
+  onBack: () => void;
+  onMatched: () => void;
+}) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [mode, setMode] = useState<'in-person' | 'virtual'>('in-person');
@@ -1020,7 +1037,364 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
       <TriageProgressSheet
         visible={showTriageSheet}
         onClose={() => setShowTriageSheet(false)}
+        onMatched={() => {
+          setShowTriageSheet(false);
+          onMatched();
+        }}
       />
+    </View>
+  );
+}
+
+type MatchTab = 'About' | 'Availability' | 'Reviews';
+
+function InterpreterMatchScreen({ onBack }: { onBack: () => void }) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [activeTab, setActiveTab] = useState<MatchTab>('About');
+  const [booked, setBooked] = useState(false);
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+
+  return (
+    <View
+      style={[matchStyles.screen, { backgroundColor: colors.onboardingBackground }]}
+      testID="interpreter-match-screen"
+    >
+      <StatusBar barStyle="dark-content" backgroundColor={colors.tint} />
+      <View
+        style={[
+          matchStyles.topBand,
+          { backgroundColor: colors.tint, height: topInset + 110 },
+        ]}
+      />
+      <Pressable
+        onPress={onBack}
+        accessibilityRole="button"
+        accessibilityLabel="Back to booking request"
+        hitSlop={12}
+        style={({ pressed }) => [
+          matchStyles.backButton,
+          { top: topInset + 13 },
+          pressed && styles.pressed,
+        ]}
+      >
+        <Ionicons name="arrow-back" size={24} color={colors.brandInk} />
+      </Pressable>
+
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          matchStyles.scrollContent,
+          { paddingTop: topInset + 55, paddingBottom: bottomInset + 30 },
+        ]}
+      >
+        <View
+          style={[
+            matchStyles.profileCard,
+            { backgroundColor: colors.onboardingBackground },
+          ]}
+        >
+          <View
+            style={[
+              matchStyles.portraitFrame,
+              { backgroundColor: colors.onboardingBackground },
+            ]}
+          >
+            <Image
+              source={maryOlayemi}
+              resizeMode="cover"
+              style={matchStyles.portrait}
+              accessibilityLabel="Mary Olayemi"
+            />
+          </View>
+          <Text style={[matchStyles.name, { color: colors.foreground }]}>
+            Mary Olayemi
+          </Text>
+          <View style={matchStyles.ratingRow}>
+            <Image
+              source={ratingStar}
+              resizeMode="contain"
+              style={matchStyles.ratingStar}
+              accessibilityLabel="Five star rating"
+            />
+            <Text style={[matchStyles.ratingText, { color: colors.bodyText }]}>
+              5 (24 reviews)
+            </Text>
+          </View>
+          <View style={matchStyles.statsRow}>
+            <MatchStat label="Hourly Rate" value="₦ 20,000" colors={colors} />
+            <MatchStat label="Bookings" value="24+" colors={colors} />
+            <MatchStat label="To arrive in" value="7 min" colors={colors} />
+          </View>
+        </View>
+
+        <View
+          style={[
+            matchStyles.tabs,
+            { backgroundColor: colors.onboardingBackground },
+          ]}
+        >
+          {(['About', 'Availability', 'Reviews'] as MatchTab[]).map((tab) => {
+            const active = activeTab === tab;
+            return (
+              <Pressable
+                key={tab}
+                onPress={() => setActiveTab(tab)}
+                accessibilityRole="button"
+                accessibilityState={{ selected: active }}
+                accessibilityLabel={`View ${tab.toLowerCase()}`}
+                style={[
+                  matchStyles.tab,
+                  active && { backgroundColor: colors.softGreen },
+                ]}
+              >
+                <Text
+                  style={[
+                    matchStyles.tabText,
+                    { color: active ? colors.brandInk : colors.bodyText },
+                  ]}
+                >
+                  {tab}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {activeTab === 'About' ? (
+          <View
+            style={[
+              matchStyles.detailsCard,
+              { backgroundColor: colors.onboardingBackground },
+            ]}
+          >
+            <Text style={[matchStyles.sectionTitle, { color: colors.foreground }]}>
+              Bio
+            </Text>
+            <Text style={[matchStyles.bio, { color: colors.bodyText }]}>
+              Amara is ASLIN-certified for medical settings, just 1.2km from the
+              hospital, and free for the next 3 hours.
+            </Text>
+
+            <MatchDetailSection
+              icon="book-outline"
+              title="Specialties"
+              colors={colors}
+            >
+              <View style={matchStyles.pillRow}>
+                <MatchPill label="Medical" colors={colors} />
+                <MatchPill label="Educational" colors={colors} />
+                <MatchPill label="Business" colors={colors} />
+              </View>
+            </MatchDetailSection>
+
+            <MatchDetailSection
+              icon="globe-outline"
+              title="Languages"
+              colors={colors}
+            >
+              <View style={matchStyles.pillColumn}>
+                <MatchPill label="American Sign Language (ASL)" colors={colors} />
+                <MatchPill label="Nigerian Sign Language (ASL)" colors={colors} />
+              </View>
+            </MatchDetailSection>
+
+            <MatchDetailSection
+              icon="ribbon-outline"
+              title="Certifications"
+              colors={colors}
+            >
+              <View style={matchStyles.certificationList}>
+                <Certification label="ASLIN Certified" colors={colors} />
+                <Certification
+                  label="Medical Interpreting Certificate"
+                  colors={colors}
+                />
+              </View>
+            </MatchDetailSection>
+          </View>
+        ) : activeTab === 'Availability' ? (
+          <View
+            style={[
+              matchStyles.detailsCard,
+              { backgroundColor: colors.onboardingBackground },
+            ]}
+          >
+            <Text style={[matchStyles.sectionTitle, { color: colors.foreground }]}>
+              Available today
+            </Text>
+            <Text style={[matchStyles.bio, { color: colors.bodyText }]}>
+              Mary is available now and can arrive in about 7 minutes. She is
+              also available for the next 3 hours.
+            </Text>
+            <View
+              style={[
+                matchStyles.availabilityCallout,
+                { backgroundColor: colors.softGreen },
+              ]}
+            >
+              <Ionicons name="checkmark-circle" size={22} color={colors.triageGreen} />
+              <Text style={[matchStyles.availabilityText, { color: colors.brandInk }]}>
+                Available for your request
+              </Text>
+            </View>
+          </View>
+        ) : (
+          <View
+            style={[
+              matchStyles.detailsCard,
+              { backgroundColor: colors.onboardingBackground },
+            ]}
+          >
+            <Text style={[matchStyles.sectionTitle, { color: colors.foreground }]}>
+              Reviews
+            </Text>
+            <View style={matchStyles.reviewSummary}>
+              <Text style={[matchStyles.reviewScore, { color: colors.foreground }]}>
+                5.0
+              </Text>
+              <View>
+                <View style={matchStyles.ratingRow}>
+                  <Image
+                    source={ratingStar}
+                    resizeMode="contain"
+                    style={matchStyles.ratingStar}
+                  />
+                  <Image
+                    source={ratingStar}
+                    resizeMode="contain"
+                    style={matchStyles.ratingStar}
+                  />
+                  <Image
+                    source={ratingStar}
+                    resizeMode="contain"
+                    style={matchStyles.ratingStar}
+                  />
+                  <Image
+                    source={ratingStar}
+                    resizeMode="contain"
+                    style={matchStyles.ratingStar}
+                  />
+                  <Image
+                    source={ratingStar}
+                    resizeMode="contain"
+                    style={matchStyles.ratingStar}
+                  />
+                </View>
+                <Text style={[matchStyles.reviewCount, { color: colors.mutedForeground }]}>
+                  Based on 24 reviews
+                </Text>
+              </View>
+            </View>
+          </View>
+        )}
+
+        <Pressable
+          onPress={() => setBooked(true)}
+          accessibilityRole="button"
+          accessibilityLabel={booked ? 'Booking confirmed' : 'Book Mary Olayemi now'}
+          style={({ pressed }) => [
+            matchStyles.bookButton,
+            { backgroundColor: colors.tint },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={[matchStyles.bookButtonText, { color: colors.brandInk }]}>
+            {booked ? 'Booked with Mary' : 'Book Now'}
+          </Text>
+        </Pressable>
+        <Pressable
+          onPress={onBack}
+          accessibilityRole="button"
+          accessibilityLabel="See other interpreter matches"
+          style={({ pressed }) => [
+            matchStyles.otherMatchesButton,
+            { backgroundColor: colors.triageCancel },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text style={[matchStyles.otherMatchesText, { color: colors.mutedForeground }]}>
+            See other matches
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
+}
+
+function MatchStat({
+  label,
+  value,
+  colors,
+}: {
+  label: string;
+  value: string;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={matchStyles.stat}>
+      <Text style={[matchStyles.statLabel, { color: colors.mutedForeground }]}>
+        {label}
+      </Text>
+      <Text style={[matchStyles.statValue, { color: colors.foreground }]}>
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+function MatchDetailSection({
+  icon,
+  title,
+  colors,
+  children,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  title: string;
+  colors: ReturnType<typeof useColors>;
+  children: ReactNode;
+}) {
+  return (
+    <View style={matchStyles.detailSection}>
+      <View style={matchStyles.detailHeading}>
+        <Ionicons name={icon} size={25} color={colors.locationGreen} />
+        <Text style={[matchStyles.detailTitle, { color: colors.foreground }]}>
+          {title}
+        </Text>
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function MatchPill({
+  label,
+  colors,
+}: {
+  label: string;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={[matchStyles.pill, { backgroundColor: colors.softGray }]}>
+      <Text style={[matchStyles.pillText, { color: colors.bodyText }]}>{label}</Text>
+    </View>
+  );
+}
+
+function Certification({
+  label,
+  colors,
+}: {
+  label: string;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View style={matchStyles.certification}>
+      <Ionicons name="checkmark" size={18} color={colors.triageGreen} />
+      <Text style={[matchStyles.certificationText, { color: colors.bodyText }]}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -1549,12 +1923,21 @@ function LocationPermissionModal({
 function TriageProgressSheet({
   visible,
   onClose,
+  onMatched,
 }: {
   visible: boolean;
   onClose: () => void;
+  onMatched: () => void;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    if (!visible) return;
+
+    const matchTimer = setTimeout(onMatched, 1100);
+    return () => clearTimeout(matchTimer);
+  }, [onMatched, visible]);
 
   return (
     <Modal
@@ -1727,6 +2110,213 @@ function TriageStep({
     </View>
   );
 }
+
+const matchStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  topBand: {
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+  },
+  backButton: {
+    alignItems: 'center',
+    height: 36,
+    justifyContent: 'center',
+    left: 27,
+    position: 'absolute',
+    width: 36,
+    zIndex: 2,
+  },
+  scrollContent: {
+    paddingHorizontal: 28,
+  },
+  profileCard: {
+    alignItems: 'center',
+    borderRadius: 14,
+    paddingBottom: 22,
+    paddingHorizontal: 16,
+    paddingTop: 48,
+  },
+  portraitFrame: {
+    alignItems: 'center',
+    borderRadius: 52,
+    height: 96,
+    justifyContent: 'center',
+    overflow: 'hidden',
+    position: 'absolute',
+    top: -48,
+    width: 96,
+  },
+  portrait: {
+    height: 96,
+    width: 96,
+  },
+  name: {
+    fontSize: 18,
+    fontWeight: '700',
+    letterSpacing: -0.3,
+  },
+  ratingRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  ratingStar: {
+    height: 18,
+    width: 18,
+  },
+  ratingText: {
+    fontSize: 13,
+  },
+  statsRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 28,
+    width: '100%',
+  },
+  stat: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  statLabel: {
+    fontSize: 10,
+  },
+  statValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    marginTop: 7,
+  },
+  tabs: {
+    borderRadius: 11,
+    flexDirection: 'row',
+    gap: 4,
+    marginTop: 26,
+    padding: 6,
+  },
+  tab: {
+    alignItems: 'center',
+    borderRadius: 8,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 40,
+  },
+  tabText: {
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  detailsCard: {
+    borderRadius: 14,
+    marginTop: 18,
+    paddingBottom: 24,
+    paddingHorizontal: 18,
+    paddingTop: 21,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  bio: {
+    fontSize: 15,
+    lineHeight: 23,
+    marginTop: 8,
+  },
+  detailSection: {
+    marginTop: 22,
+  },
+  detailHeading: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 12,
+  },
+  detailTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  pillRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 12,
+  },
+  pillColumn: {
+    gap: 10,
+    marginTop: 12,
+  },
+  pill: {
+    alignSelf: 'flex-start',
+    borderRadius: 999,
+    justifyContent: 'center',
+    minHeight: 33,
+    paddingHorizontal: 17,
+  },
+  pillText: {
+    fontSize: 12.5,
+  },
+  certificationList: {
+    gap: 7,
+    marginTop: 12,
+  },
+  certification: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
+  certificationText: {
+    fontSize: 13,
+  },
+  bookButton: {
+    alignItems: 'center',
+    borderRadius: 16,
+    justifyContent: 'center',
+    minHeight: 54,
+    marginTop: 20,
+  },
+  bookButtonText: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  otherMatchesButton: {
+    alignItems: 'center',
+    borderRadius: 14,
+    justifyContent: 'center',
+    minHeight: 49,
+    marginTop: 10,
+  },
+  otherMatchesText: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  availabilityCallout: {
+    alignItems: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 22,
+    padding: 15,
+  },
+  availabilityText: {
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  reviewSummary: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 18,
+    marginTop: 18,
+  },
+  reviewScore: {
+    fontSize: 38,
+    fontWeight: '700',
+  },
+  reviewCount: {
+    fontSize: 12,
+    marginTop: 4,
+  },
+});
 
 const locationPermissionStyles = StyleSheet.create({
   modalRoot: {

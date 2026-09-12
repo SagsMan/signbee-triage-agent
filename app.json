@@ -12,10 +12,18 @@
     },
     "scheme": "signbee-triage-agent",
     "userInterfaceStyle": "light",
-    "androidStatusBar": {
-      "barStyle": "dark-content",
-      "backgroundColor": "#AAF70A",
-      "translucent": false
+    "ios": {
+      "supportsTablet": false
+    },
+    "android": {
+      "statusBar": {
+        "barStyle": "dark-content",
+        "backgroundColor": "#AAF70A",
+        "translucent": false
+      }
+    },
+    "web": {
+      "favicon": "./assets/images/icon.png"
     },
     "plugins": [
       "expo-router",
