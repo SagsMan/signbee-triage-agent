@@ -19,6 +19,13 @@ const colors = {
     tint: '#AAF70A',
     heading: '#33294F',
     bodyText: '#403852',
+    brandInk: '#33294F',
+    softGreen: '#EAF7C9',
+    softGray: '#F3F1EF',
+    divider: '#E4E0DD',
+    fieldBorder: '#D8D3D0',
+    placeholder: '#8B858D',
+    progressTrack: '#DDD8D4',
 
     // Core surfaces
     background: '#AAF70A',
