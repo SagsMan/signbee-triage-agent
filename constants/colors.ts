@@ -22,6 +22,7 @@ const colors = {
 
     // Core surfaces
     background: '#AAF70A',
+    onboardingBackground: '#FFFFFF',
     foreground: '#000000',
 
     // Cards / elevated surfaces
