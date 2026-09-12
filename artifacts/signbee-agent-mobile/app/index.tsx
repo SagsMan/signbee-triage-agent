@@ -193,6 +193,22 @@ function BrandMark({ large = false }: { large?: boolean }) {
   );
 }
 
+function AppSplash() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  return (
+    <View style={[styles.flex, styles.splashScreen, { backgroundColor: colors.primary }]}>
+      <View style={[styles.splashCenter, { marginTop: insets.top - insets.bottom }]}>
+        <Image
+          source={require('../assets/images/splash-logo.png')}
+          resizeMode="contain"
+          style={styles.splashLogo}
+        />
+      </View>
+    </View>
+  );
+}
+
 function Onboarding({ onDone }: { onDone: () => void }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -207,19 +223,18 @@ function Onboarding({ onDone }: { onDone: () => void }) {
       >
         <Text style={[styles.onboardingBrand, { color: colors.foreground }]}>SignBee</Text>
         <View style={styles.onboardingArt}>
-          <View style={[styles.artRing, { borderColor: colors.primary }]} />
-          <View style={[styles.artDot, styles.artDotTop, { backgroundColor: colors.primary }]} />
-          <View style={[styles.artDot, styles.artDotBottom, { backgroundColor: colors.primary }]} />
-          <BrandMark large />
+          <Image
+            source={require('../assets/images/onboarding-art.png')}
+            resizeMode="contain"
+            style={styles.onboardingArtImage}
+          />
         </View>
-        <View style={styles.onboardingCopy}>
-          <Text style={[styles.onboardingTitle, { color: colors.foreground }]}>
-            Build a More Inclusive World
-          </Text>
-          <Text style={[styles.onboardingBody, { color: colors.secondaryForeground }]}>
-            Connect with certified interpreters and bridge communication gaps instantly.
-          </Text>
-        </View>
+        <Image
+          accessibilityLabel="Build a More Inclusive World. Connect with certified interpreters and bridge communication gaps instantly."
+          source={require('../assets/images/onboarding-copy.png')}
+          resizeMode="contain"
+          style={styles.onboardingCopyImage}
+        />
         <View style={styles.pagination}>
           <View style={[styles.paginationActive, { backgroundColor: colors.foreground }]} />
           <View style={[styles.paginationDot, { backgroundColor: colors.muted }]} />
@@ -831,18 +846,26 @@ export default function Index() {
   const [tab, setTab] = useState<Tab>('home');
   const [draft, setDraft] = useState<Draft>(initialDraft);
   const [booting, setBooting] = useState(true);
+  const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
     let active = true;
-    AsyncStorage.getItem('signbee_has_onboarded')
-      .then((value) => {
+    Promise.all([
+      AsyncStorage.getItem('signbee_has_onboarded'),
+      new Promise((resolve) => setTimeout(resolve, 800)),
+    ])
+      .then(([value]) => {
         if (active) {
           setScreen(value === 'true' ? 'home' : 'onboarding');
           setBooting(false);
+          setShowSplash(false);
         }
       })
       .catch(() => {
-        if (active) setBooting(false);
+        if (active) {
+          setBooting(false);
+          setShowSplash(false);
+        }
       });
     return () => {
       active = false;
@@ -865,14 +888,7 @@ export default function Index() {
     setScreen('home');
   };
 
-  if (booting) {
-    return (
-      <View style={styles.loadingScreen}>
-        <BrandMark />
-        <ActivityIndicator color="#B7F800" style={{ marginTop: 18 }} />
-      </View>
-    );
-  }
+  if (showSplash || booting) return <AppSplash />;
 
   if (screen === 'onboarding') return <Onboarding onDone={finishOnboarding} />;
   if (screen === 'request') {
@@ -905,8 +921,13 @@ export default function Index() {
   );
 }
 
+/* Previous screen routing is intentionally kept above the styling block. */
+
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  splashScreen: { alignItems: 'center', justifyContent: 'center' },
+  splashCenter: { alignItems: 'center', justifyContent: 'center' },
+  splashLogo: { width: 112, height: 100 },
   loadingScreen: {
     flex: 1,
     alignItems: 'center',
@@ -935,13 +956,8 @@ const styles = StyleSheet.create({
   onboardingContent: { flexGrow: 1, alignItems: 'center', paddingHorizontal: 22 },
   onboardingBrand: { fontFamily: 'Inter_500Medium', fontSize: 28, letterSpacing: -1, marginTop: 8 },
   onboardingArt: { height: 390, width: '100%', alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  artRing: { width: 220, height: 220, borderWidth: 32, borderRadius: 120 },
-  artDot: { width: 36, height: 36, borderRadius: 18, position: 'absolute' },
-  artDotTop: { top: 72, right: 46 },
-  artDotBottom: { bottom: 62, left: 42 },
-  onboardingCopy: { alignItems: 'center', paddingHorizontal: 8 },
-  onboardingTitle: { fontFamily: 'Inter_700Bold', fontSize: 29, letterSpacing: -1.2, textAlign: 'center' },
-  onboardingBody: { fontFamily: 'Inter_400Regular', fontSize: 16, lineHeight: 24, textAlign: 'center', marginTop: 12, maxWidth: 320 },
+  onboardingArtImage: { width: 332, height: 332 },
+  onboardingCopyImage: { width: '100%', height: 80, marginTop: 2 },
   pagination: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 28 },
   paginationActive: { width: 32, height: 10, borderRadius: 5 },
   paginationDot: { width: 10, height: 10, borderRadius: 5 },
