@@ -36,18 +36,18 @@ export default function SignBeeSplashScreen() {
   const lowerIconRightCenter =
     width - lowerIconRight - accessibilitySize / 2;
   const lowerIconCenterY = lowerIconTop + accessibilitySize / 2;
-  const arcHeight = Math.min(width * 0.18, 68);
-  const iconGap = (lowerIconRightCenter - lowerIconLeftCenter) / 2;
+  const topSignCenterX = width / 2;
+  const topSignCenterY =
+    topInset + height * 0.19 + topSignSize / 2;
+  const curveControlInset = Math.max(width * 0.24, 92);
   const tracePath = [
     `M ${lowerIconLeftCenter} ${lowerIconCenterY}`,
-    `C ${lowerIconLeftCenter + iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
-    `${lowerIconLeftCenter + iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
-    `${width / 2} ${lowerIconCenterY}`,
-    `C ${lowerIconRightCenter - iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
-    `${lowerIconRightCenter - iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
+    `Q ${topSignCenterX - curveControlInset} ${topSignCenterY}`,
+    `${topSignCenterX} ${topSignCenterY}`,
+    `Q ${topSignCenterX + curveControlInset} ${topSignCenterY}`,
     `${lowerIconRightCenter} ${lowerIconCenterY}`,
   ].join(' ');
-  const tracePathLength = Math.max(width * 1.1, 420);
+  const tracePathLength = Math.max(width + height, 720);
 
   useEffect(() => {
     const traceListener = traceOffset.addListener(({ value }) => {
