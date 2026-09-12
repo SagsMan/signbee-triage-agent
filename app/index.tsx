@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Image, StatusBar } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
@@ -8,24 +8,21 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useColors } from '@/hooks/useColors';
 
 const signbeeMark = require('@/assets/images/signbee-mark.png');
 const accessibilityMark = require('@/assets/images/accessibility-mark.png');
 const locationMark = require('@/assets/images/location-mark.png');
 const topSignMark = require('@/assets/images/top-sign-mark.png');
-const TRACE_DOT_COUNT = 7;
-const TRACE_DOT_SIZE = 3;
-const TRACE_DOT_GAP = 3;
-const TRACE_TRAIL_WIDTH =
-  TRACE_DOT_COUNT * TRACE_DOT_SIZE + (TRACE_DOT_COUNT - 1) * TRACE_DOT_GAP;
 
 export default function SignBeeSplashScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const traceProgress = useRef(new Animated.Value(0)).current;
+  const traceOffset = useRef(new Animated.Value(0)).current;
   const traceOpacity = useRef(new Animated.Value(0)).current;
+  const [traceDashOffset, setTraceDashOffset] = useState(0);
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const markSize = Math.min(Math.max(width * 0.13, 50), 64);
@@ -38,40 +35,56 @@ export default function SignBeeSplashScreen() {
   const lowerIconLeftCenter = lowerIconLeft + accessibilitySize / 2;
   const lowerIconRightCenter =
     width - lowerIconRight - accessibilitySize / 2;
+  const lowerIconCenterY = lowerIconTop + accessibilitySize / 2;
+  const arcHeight = Math.min(width * 0.18, 68);
+  const iconGap = (lowerIconRightCenter - lowerIconLeftCenter) / 2;
+  const tracePath = [
+    `M ${lowerIconLeftCenter} ${lowerIconCenterY}`,
+    `C ${lowerIconLeftCenter + iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
+    `${lowerIconLeftCenter + iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
+    `${width / 2} ${lowerIconCenterY}`,
+    `C ${lowerIconRightCenter - iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
+    `${lowerIconRightCenter - iconGap * 0.5} ${lowerIconCenterY + arcHeight}`,
+    `${lowerIconRightCenter} ${lowerIconCenterY}`,
+  ].join(' ');
+  const tracePathLength = Math.max(width * 1.1, 420);
 
   useEffect(() => {
+    const traceListener = traceOffset.addListener(({ value }) => {
+      setTraceDashOffset(value);
+    });
     const tracing = Animated.loop(
       Animated.sequence([
         Animated.parallel([
-          Animated.timing(traceProgress, {
-            toValue: 1,
+          Animated.timing(traceOffset, {
+            toValue: -tracePathLength,
             duration: 720,
-            useNativeDriver: Platform.OS !== 'web',
+            useNativeDriver: false,
           }),
           Animated.sequence([
             Animated.timing(traceOpacity, {
               toValue: 1,
               duration: 100,
-              useNativeDriver: Platform.OS !== 'web',
+              useNativeDriver: false,
             }),
             Animated.delay(520),
             Animated.timing(traceOpacity, {
               toValue: 0,
               duration: 100,
-              useNativeDriver: Platform.OS !== 'web',
+              useNativeDriver: false,
             }),
           ]),
         ]),
         Animated.parallel([
-          Animated.timing(traceProgress, {
+          Animated.timing(traceOffset, {
             toValue: 0,
             duration: 0,
-            useNativeDriver: Platform.OS !== 'web',
+            useNativeDriver: false,
           }),
           Animated.timing(traceOpacity, {
             toValue: 0,
             duration: 0,
-            useNativeDriver: Platform.OS !== 'web',
+            useNativeDriver: false,
           }),
         ]),
       ]),
@@ -80,16 +93,11 @@ export default function SignBeeSplashScreen() {
 
     tracing.start();
 
-    return () => tracing.stop();
-  }, [traceOpacity, traceProgress]);
-
-  const traceTranslateX = traceProgress.interpolate({
-    inputRange: [0, 1],
-    outputRange: [
-      lowerIconLeftCenter - TRACE_TRAIL_WIDTH,
-      lowerIconRightCenter,
-    ],
-  });
+    return () => {
+      tracing.stop();
+      traceOffset.removeListener(traceListener);
+    };
+  }, [traceOffset, traceOpacity, tracePathLength]);
 
   return (
     <View
@@ -174,29 +182,19 @@ export default function SignBeeSplashScreen() {
       </View>
 
       <Animated.View
-        style={[
-          styles.traceTrail,
-          {
-            top: lowerIconTop + accessibilitySize / 2 - TRACE_DOT_SIZE / 2,
-            opacity: traceOpacity,
-            transform: [{ translateX: traceTranslateX }],
-          },
-        ]}
+        style={[styles.traceLayer, { opacity: traceOpacity }]}
       >
-        {Array.from({ length: TRACE_DOT_COUNT }).map((_, index) => (
-          <View
-            key={index}
-            style={[
-              styles.traceDot,
-              {
-                opacity: 1 - index * 0.1,
-                backgroundColor: colors.foreground,
-                marginRight:
-                  index === TRACE_DOT_COUNT - 1 ? 0 : TRACE_DOT_GAP,
-              },
-            ]}
+        <Svg width={width} height={height}>
+          <Path
+            d={tracePath}
+            fill="none"
+            stroke={colors.foreground}
+            strokeWidth={3}
+            strokeLinecap="round"
+            strokeDasharray={[2, 8]}
+            strokeDashoffset={traceDashOffset}
           />
-        ))}
+        </Svg>
       </Animated.View>
 
       <View style={styles.brandLockup}>
@@ -259,17 +257,10 @@ const styles = StyleSheet.create({
     width: '100%',
     height: '100%',
   },
-  traceTrail: {
+  traceLayer: {
     position: 'absolute',
+    top: 0,
     left: 0,
-    flexDirection: 'row',
-    alignItems: 'center',
-    height: TRACE_DOT_SIZE,
     pointerEvents: 'none',
-  },
-  traceDot: {
-    width: TRACE_DOT_SIZE,
-    height: TRACE_DOT_SIZE,
-    borderRadius: TRACE_DOT_SIZE / 2,
   },
 });
