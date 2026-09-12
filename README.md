@@ -1,31 +1,22 @@
 # SignBee Interpreter Triage Agent
 
-> **Agents for Humans Hackathon** · Track: Professional Agents · Built for AWS Strands Agents SDK and Bedrock AgentCore
+Standalone Python triage and interpreter-matching service for SignBee.
 
-This repository contains the standalone triage and matching core for SignBee. It is the agent-side companion to the mobile UI in [`SagsMan/SignBEE`](https://github.com/SagsMan/SignBEE).
+## What it does
 
-![SignBee triage agent architecture](architecture.png)
+The deterministic workflow:
 
-## Why this repository exists
+1. Accepts a plain-language interpreter request.
+2. Extracts setting, urgency, language, mode, duration, and location.
+3. Classifies emergency, scheduled, and human-review cases.
+4. Ranks qualified interpreters from the local dataset with explainable reasons.
+5. Escalates ambiguous or unsafe requests instead of guessing.
+6. Returns confirmation, reminder, and post-booking check-in steps.
 
-Hospitals, schools, courts, and event organizers often describe an interpreter need in plain language without knowing which details matter. The SignBee Triage Agent turns that request into a safe, explainable workflow:
-
-1. **Intake** — accept a text request, with voice intake as a future adapter.
-2. **Understanding** — extract setting, urgency signals, language/dialect, mode, duration, and location.
-3. **Urgency classification** — separate emergency work from scheduled work and route ambiguous hospital requests to a human.
-4. **Interpreter matching** — rank qualified interpreters using language, setting experience, availability, and explainable reasons.
-5. **Human escalation** — avoid silent guesses when the request is ambiguous, high risk, or has no suitable match.
-6. **Confirmation loop** — return confirmation, reminder, and post-booking check-in steps.
-
-The companion SignBEE app now exposes the matching UI flow: request intake, triage state, matched interpreter, monitoring status, and messaging.
-
-## Current implementation
-
-The deterministic Python core in `agent/` runs locally without AWS credentials. It is the safe baseline for tests and demos while the AWS Strands/Bedrock access is being configured. `agent/strands_adapter.py` provides the Strands tool and `agent/agentcore_app.py` provides the Bedrock AgentCore Python runtime entry point.
-
-**Language choice:** the mobile SignBee UI is TypeScript/Expo, but this standalone agent service uses Python because the repository already has a Python layout and the AgentCore deployment resource provides a direct Python runtime pattern. This keeps UI concerns separate from triage orchestration and lets the AgentCore entry point run independently.
-
-The current implementation does **not** claim to be connected to live interpreter availability, production booking, or an AI model until those services are configured. The mock dataset in `data/interpreters.json` is intentionally replaceable.
+The current implementation does not claim live interpreter availability,
+production booking, or a configured AI model. The dataset in
+`data/interpreters.json` is mock data intended to be replaced by an
+authenticated service.
 
 ## Project structure
 
@@ -33,20 +24,19 @@ The current implementation does **not** claim to be connected to live interprete
 signbee-triage-agent/
 ├── agent/
 │   ├── main.py                 # CLI entry point
-│   ├── models.py               # Request, interpreter, match, and result types
+│   ├── models.py               # Request and result types
 │   ├── intake.py               # Plain-language request understanding
-│   ├── classifier.py           # Emergency/scheduled/human-review classification
+│   ├── classifier.py           # Urgency and human-review classification
 │   ├── matcher.py              # Explainable interpreter ranking
-│   ├── workflow.py             # End-to-end deterministic triage workflow
-│   ├── strands_adapter.py      # Strands agent and explainable triage tool
-│   ├── agentcore_app.py        # Bedrock AgentCore Python runtime entry point
-│   └── tools/                  # Strands tool package boundary
+│   ├── workflow.py             # End-to-end triage workflow
+│   ├── strands_adapter.py      # Strands agent and triage tool
+│   ├── agentcore_app.py        # Bedrock AgentCore runtime entry point
+│   └── tools/
 ├── data/
 │   └── interpreters.json       # Mock interpreter dataset
 ├── tests/
-│   ├── test_emergency.py       # Emergency and escalation scenarios
-│   └── test_scheduled.py       # Scheduled matching scenario
-├── architecture.png            # Architecture diagram
+│   ├── test_emergency.py
+│   └── test_scheduled.py
 ├── requirements.txt
 └── README.md
 ```
@@ -62,7 +52,7 @@ pip install -r requirements.txt
 python -m unittest discover -s tests -v
 ```
 
-Run a local request without AWS access:
+Run an emergency request:
 
 ```bash
 python -m agent.main \
@@ -72,7 +62,7 @@ python -m agent.main \
   --location "Lagos hospital"
 ```
 
-Or run the scheduled school scenario:
+Run a scheduled request:
 
 ```bash
 python -m agent.main \
@@ -81,30 +71,11 @@ python -m agent.main \
   --setting school
 ```
 
-## Agent screen demo
+## Strands and Bedrock AgentCore
 
-The repository includes a standalone, mobile-first demo of the three SignBee
-Agent screens from the companion app:
-
-1. Request intake — choose In-person or Virtual and describe the situation.
-2. Matching — show the agent reading, filtering, and ranking the request.
-3. Confirmed — show the best match, explain why it was selected, and show the
-   SignBee Agent monitoring state.
-
-The UI calls the deterministic triage workflow in this repository, so it can
-be demonstrated without AWS credentials:
-
-```bash
-python demo_server.py
-```
-
-Open `http://127.0.0.1:8000` in a browser. The demo uses the SignBee design
-tokens already used by the app (`#1A1340`, `#AAFF00`, and `#E8FFB0`) and keeps
-the general SignBEE marketplace screens out of this agent repository.
-
-## Strands and Bedrock AgentCore integration
-
-The backend uses the official Python pattern: a Strands `Agent` is wrapped by `BedrockAgentCoreApp` and exposed through an `@app.entrypoint` function. Install the runtime dependencies and configure AWS through the runtime’s secret manager or environment—not by committing credentials:
+The backend can wrap the deterministic triage tool with Strands and expose it
+through Bedrock AgentCore. Configure AWS through the runtime environment and
+never commit credentials:
 
 ```bash
 export AWS_REGION=us-east-1
@@ -113,74 +84,20 @@ python -c "from agent.strands_adapter import create_strands_agent; print(create_
 python -m agent.agentcore_app
 ```
 
-Local unit tests do not import AgentCore and continue to run without AWS access. The AgentCore endpoint accepts JSON such as `{"prompt":"A patient needs an interpreter urgently in A&E","mode":"in-person"}` at `/invocations`.
+The AgentCore endpoint accepts JSON such as:
 
-Reference resources:
+```json
+{
+  "prompt": "A patient needs an interpreter urgently in A&E",
+  "mode": "in-person"
+}
+```
 
-- [Strands Agents Python AgentCore deployment](https://strandsagents.com/docs/user-guide/deploy/deploy_to_bedrock_agentcore/python/)
-- [Strands Agents Amazon Bedrock model provider](https://strandsagents.com/docs/user-guide/concepts/model-providers/amazon-bedrock)
+## Safety rules
 
-The adapter is intentionally narrow. The agent should call the triage tool, preserve the structured result, explain match reasons, and escalate instead of inventing availability. A future runtime integration can replace the local matcher with authenticated SignBee booking and interpreter services.
-
-## Safety and escalation rules
-
-- Emergency language is surfaced explicitly; it is not hidden behind a score.
+- Emergency language is surfaced explicitly.
 - Ambiguous hospital requests require human confirmation.
 - Missing language or no suitable match is visible in the result.
-- Match results include reasons so a coordinator can inspect the recommendation.
+- Match results include reasons for coordinator review.
 - Mock availability is not production availability.
-- No AWS credentials, API keys, or personal data belong in this repository.
-
-## Credits
-
-- **Maryam** — UI/UX Designer for both the SignBee app and SignBee Agent
-- **Sagiru** — Developer
-
-## Team
-
-- **Sagiru Garba** — Development / implementation
-- **Maryam Bola** — Product / agent design
-
-## License
-
-MIT — see [LICENSE](LICENSE).
-
-Built for the Agents for Humans Hackathon · Submissions close September 14, 2026.
-
-
-<!-- signbee-agent-interface -->
-## SignBee Agent interface
-
-The SignBee Agent is the client-facing request and triage flow for connecting people with a qualified human interpreter, whether the request is in-person or virtual. The reference gallery below mirrors the screens supplied for the Agent interface.
-
-### Complete interface reference
-
-<table>
-<tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-01.png" width="190" alt="SignBee Agent interface screen 01"><br><sub>Screen 01</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-02.png" width="190" alt="SignBee Agent interface screen 02"><br><sub>Screen 02</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-03.png" width="190" alt="SignBee Agent interface screen 03"><br><sub>Screen 03</sub></td>
-</tr>
-<tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-04.png" width="190" alt="SignBee Agent interface screen 04"><br><sub>Screen 04</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-05.png" width="190" alt="SignBee Agent interface screen 05"><br><sub>Screen 05</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-06.png" width="190" alt="SignBee Agent interface screen 06"><br><sub>Screen 06</sub></td>
-</tr>
-<tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-07.png" width="190" alt="SignBee Agent interface screen 07"><br><sub>Screen 07</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-08.png" width="190" alt="SignBee Agent interface screen 08"><br><sub>Screen 08</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-09.png" width="190" alt="SignBee Agent interface screen 09"><br><sub>Screen 09</sub></td>
-</tr>
-<tr>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-10.png" width="190" alt="SignBee Agent interface screen 10"><br><sub>Screen 10</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-11.png" width="190" alt="SignBee Agent interface screen 11"><br><sub>Screen 11</sub></td>
-<td align="center" width="33%"><img src="https://raw.githubusercontent.com/SagsMan/signbee-triage-agent/main/docs/screens/signbee-agent-reference-12.png" width="190" alt="SignBee Agent interface screen 12"><br><sub>Screen 12</sub></td>
-</tr>
-</table>
-
-### Frontend and backend direction
-
-- **Frontend:** React Native with Expo Go for the mobile client.
-- **Backend:** Keep the existing Python triage and matching service.
-- **Boundary:** The mobile app will call the Python service for intake, triage, matching, and status updates.
-\n
+- AWS credentials, API keys, and personal data do not belong in this repository.
