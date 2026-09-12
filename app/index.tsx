@@ -1,117 +1,103 @@
-import { StatusBar, StyleSheet, Text, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Image, StatusBar } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import {
+  Platform,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { useColors } from '@/hooks/useColors';
 
-export default function HomeScreen() {
+const signbeeMark = require('@/assets/images/signbee-mark.png');
+const accessibilityMark = require('@/assets/images/accessibility-mark.png');
+
+export default function SignBeeSplashScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const markSize = Math.min(Math.max(width * 0.13, 50), 64);
+  const accessibilitySize = Math.min(Math.max(width * 0.145, 58), 72);
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
-      <View style={styles.container}>
-        <View style={styles.brandRow}>
-          <View style={styles.brandMark}>
-            <Text style={styles.brandMarkText}>S</Text>
-          </View>
-          <Text style={styles.brandName}>SignBee</Text>
-        </View>
+    <View
+      style={[
+        styles.screen,
+        {
+          backgroundColor: colors.background,
+          paddingTop: topInset,
+          paddingBottom: bottomInset,
+        },
+      ]}
+      testID="signbee-splash-screen"
+    >
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={colors.background}
+      />
 
-        <View style={styles.content}>
-          <Text style={styles.eyebrow}>TRIAGE AGENT</Text>
-          <Text style={styles.title}>Your Expo Go frontend is ready.</Text>
-          <Text style={styles.description}>
-            This is the clean starting point for the SignBee interpreter
-            triage experience. The Python agent remains available at the
-            repository root for the next step.
-          </Text>
-
-          <View style={styles.placeholderCard}>
-            <Text style={styles.cardTitle}>Ready for the next instruction</Text>
-            <Text style={styles.cardBody}>
-              Intake, matching, status, and messaging screens can be added
-              here when you are ready.
-            </Text>
-          </View>
-        </View>
-
-        <Text style={styles.footer}>SignBee Triage Agent · Expo Go</Text>
+      <View
+        style={[
+          styles.accessibilityMark,
+          {
+            width: accessibilitySize,
+            height: accessibilitySize,
+            left: Math.max(width * 0.08, 24),
+            top: topInset + height * 0.45,
+          },
+        ]}
+      >
+        <Image
+          source={accessibilityMark}
+          resizeMode="contain"
+          style={styles.fill}
+          accessibilityLabel="Accessibility"
+        />
       </View>
-    </SafeAreaView>
+
+      <View style={styles.brandLockup}>
+        <Image
+          source={signbeeMark}
+          resizeMode="contain"
+          style={{ width: markSize, height: markSize }}
+          accessibilityLabel="SignBee mark"
+        />
+        <Text
+          style={[styles.wordmark, { color: colors.foreground }]}
+          accessibilityRole="header"
+        >
+          SignBee
+        </Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
+  screen: {
     flex: 1,
-    backgroundColor: "#F7F7F2",
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
   },
-  container: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingVertical: 20,
-    justifyContent: "space-between",
-  },
-  brandRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-  },
-  brandMark: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#AAFF00",
-  },
-  brandMarkText: {
-    color: "#1A1340",
-    fontSize: 20,
-    fontWeight: "800",
-  },
-  brandName: {
-    color: "#1A1340",
-    fontSize: 20,
-    fontWeight: "700",
-  },
-  content: {
+  brandLockup: {
+    alignItems: 'center',
+    justifyContent: 'center',
     gap: 18,
   },
-  eyebrow: {
-    color: "#6B6790",
-    fontSize: 12,
-    fontWeight: "800",
-    letterSpacing: 1.8,
+  wordmark: {
+    fontFamily: 'Inter_700Bold',
+    fontSize: 30,
+    letterSpacing: -1,
+    lineHeight: 36,
   },
-  title: {
-    maxWidth: 340,
-    color: "#1A1340",
-    fontSize: 42,
-    lineHeight: 46,
-    fontWeight: "800",
+  accessibilityMark: {
+    position: 'absolute',
   },
-  description: {
-    maxWidth: 360,
-    color: "#514D6F",
-    fontSize: 17,
-    lineHeight: 26,
-  },
-  placeholderCard: {
-    marginTop: 12,
-    padding: 20,
-    borderRadius: 20,
-    backgroundColor: "#E8FFB0",
-  },
-  cardTitle: {
-    color: "#1A1340",
-    fontSize: 17,
-    fontWeight: "800",
-  },
-  cardBody: {
-    marginTop: 8,
-    color: "#514D6F",
-    fontSize: 15,
-    lineHeight: 22,
-  },
-  footer: {
-    color: "#8A86A3",
-    fontSize: 12,
+  fill: {
+    width: '100%',
+    height: '100%',
   },
 });

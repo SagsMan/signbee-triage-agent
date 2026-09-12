@@ -4,9 +4,22 @@
     "slug": "signbee-triage-agent",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/images/icon.png",
+    "splash": {
+      "image": "./assets/images/signbee-mark.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#AAF70A"
+    },
     "scheme": "signbee-triage-agent",
-    "userInterfaceStyle": "automatic",
-    "plugins": ["expo-router"],
+    "userInterfaceStyle": "light",
+    "androidStatusBar": {
+      "barStyle": "dark-content",
+      "backgroundColor": "#AAF70A",
+      "translucent": false
+    },
+    "plugins": [
+      "expo-router"
+    ],
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
