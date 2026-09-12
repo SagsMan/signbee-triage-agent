@@ -1,13 +1,17 @@
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Image, StatusBar } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
+  Animated,
+  Image,
   Platform,
+  Pressable,
+  StatusBar,
   StyleSheet,
   Text,
   View,
   useWindowDimensions,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { useColors } from '@/hooks/useColors';
 
@@ -15,8 +19,44 @@ const signbeeMark = require('@/assets/images/signbee-mark.png');
 const accessibilityMark = require('@/assets/images/accessibility-mark.png');
 const locationMark = require('@/assets/images/location-mark.png');
 const topSignMark = require('@/assets/images/top-sign-mark.png');
+const onboardingRing = require('@/assets/images/onboarding-ring.png');
+const onboardingCharacter = require('@/assets/images/onboarding-character.png');
+const onboardingDotLeft = require('@/assets/images/onboarding-dot-left.png');
+const onboardingDotRight = require('@/assets/images/onboarding-dot-right.png');
 
-export default function SignBeeSplashScreen() {
+const slides = [
+  {
+    title: 'Build a More Inclusive World',
+    description:
+      'Connect with certified interpreters and bridge communication gaps instantly.',
+  },
+  {
+    title: 'Find the Right Interpreter',
+    description:
+      'Discover certified interpreters who match your language, setting, and needs.',
+  },
+  {
+    title: 'Communicate With Confidence',
+    description:
+      'Get the support you need whenever communication matters most.',
+  },
+];
+
+export default function SignBeeApp() {
+  const [showOnboarding, setShowOnboarding] = useState(false);
+
+  useEffect(() => {
+    const transitionTimer = setTimeout(() => {
+      setShowOnboarding(true);
+    }, 2200);
+
+    return () => clearTimeout(transitionTimer);
+  }, []);
+
+  return showOnboarding ? <SignBeeOnboardingScreen /> : <SignBeeSplashScreen />;
+}
+
+function SignBeeSplashScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
@@ -102,7 +142,7 @@ export default function SignBeeSplashScreen() {
   return (
     <View
       style={[
-        styles.screen,
+        splashStyles.screen,
         {
           backgroundColor: colors.background,
           paddingTop: topInset,
@@ -118,7 +158,7 @@ export default function SignBeeSplashScreen() {
 
       <View
         style={[
-          styles.topSignMark,
+          splashStyles.topSignMark,
           {
             width: topSignSize,
             height: topSignSize,
@@ -129,14 +169,14 @@ export default function SignBeeSplashScreen() {
         <Image
           source={topSignMark}
           resizeMode="contain"
-          style={styles.fill}
+          style={splashStyles.fill}
           accessibilityLabel="Sign icon"
         />
       </View>
 
       <View
         style={[
-          styles.accessibilityMark,
+          splashStyles.accessibilityMark,
           {
             width: accessibilitySize,
             height: accessibilitySize,
@@ -148,14 +188,14 @@ export default function SignBeeSplashScreen() {
         <Image
           source={accessibilityMark}
           resizeMode="contain"
-          style={styles.fill}
+          style={splashStyles.fill}
           accessibilityLabel="Accessibility"
         />
       </View>
 
       <View
         style={[
-          styles.locationMark,
+          splashStyles.locationMark,
           {
             width: accessibilitySize,
             height: accessibilitySize,
@@ -166,7 +206,7 @@ export default function SignBeeSplashScreen() {
       >
         <View
           style={[
-            styles.locationBubble,
+            splashStyles.locationBubble,
             { backgroundColor: colors.locationBubble },
           ]}
         />
@@ -182,7 +222,7 @@ export default function SignBeeSplashScreen() {
       </View>
 
       <Animated.View
-        style={[styles.traceLayer, { opacity: traceOpacity }]}
+        style={[splashStyles.traceLayer, { opacity: traceOpacity }]}
       >
         <Svg width={width} height={height}>
           <Path
@@ -197,7 +237,7 @@ export default function SignBeeSplashScreen() {
         </Svg>
       </Animated.View>
 
-      <View style={styles.brandLockup}>
+      <View style={splashStyles.brandLockup}>
         <View
           style={{ width: markSize, height: markSize }}
           accessible
@@ -206,11 +246,11 @@ export default function SignBeeSplashScreen() {
           <Image
             source={signbeeMark}
             resizeMode="contain"
-            style={styles.fill}
+            style={splashStyles.fill}
           />
         </View>
         <Text
-          style={[styles.wordmark, { color: colors.foreground }]}
+          style={[splashStyles.wordmark, { color: colors.foreground }]}
           accessibilityRole="header"
         >
           SignBee
@@ -220,7 +260,187 @@ export default function SignBeeSplashScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+function SignBeeOnboardingScreen() {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const slide = slides[currentSlide];
+  const isLastSlide = currentSlide === slides.length - 1;
+  const illustrationWidth = Math.min(width * 0.74, 300);
+  const illustrationHeight = Math.min(Math.max(height * 0.36, 285), 340);
+  const ringSize = Math.min(width * 0.53, 214);
+  const characterSize = Math.min(width * 0.46, 186);
+  const rightDotSize = Math.min(width * 0.1, 40);
+  const leftDotSize = Math.min(width * 0.08, 32);
+
+  const advance = () => {
+    void Haptics.selectionAsync();
+    if (!isLastSlide) {
+      setCurrentSlide((value) => value + 1);
+    }
+  };
+
+  const skip = () => {
+    void Haptics.selectionAsync();
+    setCurrentSlide(slides.length - 1);
+  };
+
+  return (
+    <View
+      style={[
+        styles.screen,
+        {
+          paddingTop: topInset + 12,
+          paddingBottom: bottomInset + 10,
+          backgroundColor: colors.background,
+        },
+      ]}
+      testID="signbee-onboarding-screen"
+    >
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={colors.background}
+      />
+
+      <View style={styles.header}>
+        <Text
+          style={[styles.logo, { color: colors.foreground }]}
+          accessibilityRole="header"
+        >
+          SignBee
+        </Text>
+      </View>
+
+      <View style={styles.content}>
+        <View
+          style={[
+            styles.illustration,
+            {
+              width: illustrationWidth,
+              height: illustrationHeight,
+              marginTop: Math.min(height * 0.07, 64),
+            },
+          ]}
+          accessible
+          accessibilityLabel="Friendly SignBee guide waving inside a lime circle"
+        >
+          <Image
+            source={onboardingRing}
+            resizeMode="contain"
+            style={[
+              styles.ring,
+              {
+                width: ringSize,
+                height: ringSize * 0.96,
+                top: illustrationHeight * 0.16,
+              },
+            ]}
+          />
+          <Image
+            source={onboardingCharacter}
+            resizeMode="contain"
+            style={[
+              styles.character,
+              {
+                width: characterSize,
+                height: characterSize,
+                bottom: illustrationHeight * 0.03,
+              },
+            ]}
+          />
+          <Image
+            source={onboardingDotRight}
+            resizeMode="contain"
+            style={[
+              styles.rightDot,
+              {
+                width: rightDotSize,
+                height: rightDotSize,
+                top: illustrationHeight * 0.08,
+                right: illustrationWidth * 0.02,
+              },
+            ]}
+          />
+          <Image
+            source={onboardingDotLeft}
+            resizeMode="contain"
+            style={[
+              styles.leftDot,
+              {
+                width: leftDotSize,
+                height: leftDotSize,
+                bottom: illustrationHeight * 0.02,
+                left: illustrationWidth * 0.02,
+              },
+            ]}
+          />
+        </View>
+
+        <View style={styles.copy}>
+          <Text
+            style={[styles.title, { color: colors.heading }]}
+            accessibilityRole="header"
+          >
+            {slide.title}
+          </Text>
+          <Text style={[styles.description, { color: colors.bodyText }]}>
+            {slide.description}
+          </Text>
+        </View>
+
+        <View style={styles.progress} accessibilityLabel={`Onboarding page ${currentSlide + 1} of ${slides.length}`}>
+          {slides.map((item, index) => (
+            <View
+              key={item.title}
+              style={[
+                styles.progressDot,
+                index === currentSlide
+                  ? [styles.progressActive, { backgroundColor: colors.heading }]
+                  : { backgroundColor: colors.muted },
+              ]}
+            />
+          ))}
+        </View>
+      </View>
+
+      <View style={styles.actions}>
+        <Pressable
+          onPress={skip}
+          style={({ pressed }) => [styles.skipButton, pressed && styles.pressed]}
+          accessibilityRole="button"
+          accessibilityLabel="Skip onboarding"
+          testID="skip-onboarding"
+        >
+          <Text style={[styles.skipText, { color: colors.foreground }]}>
+            Skip
+          </Text>
+        </Pressable>
+
+        <Pressable
+          onPress={advance}
+          style={({ pressed }) => [
+            styles.nextButton,
+            { backgroundColor: colors.tint },
+            pressed && styles.pressed,
+          ]}
+          accessibilityRole="button"
+          accessibilityLabel={isLastSlide ? 'Finish onboarding' : 'Next onboarding page'}
+          testID="next-onboarding"
+        >
+          <Text style={[styles.nextText, { color: colors.foreground }]}>
+            {isLastSlide ? 'Get started' : 'Next'}
+          </Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+const splashStyles = StyleSheet.create({
   screen: {
     flex: 1,
     alignItems: 'center',
@@ -262,5 +482,108 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     pointerEvents: 'none',
+  },
+});
+
+const styles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  header: {
+    alignItems: 'center',
+    height: 42,
+    justifyContent: 'center',
+  },
+  logo: {
+    fontSize: 28,
+    fontWeight: '400',
+    letterSpacing: -0.7,
+  },
+  content: {
+    alignItems: 'center',
+    flex: 1,
+  },
+  illustration: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  ring: {
+    position: 'absolute',
+  },
+  character: {
+    bottom: 0,
+    position: 'absolute',
+  },
+  rightDot: {
+    position: 'absolute',
+  },
+  leftDot: {
+    position: 'absolute',
+  },
+  copy: {
+    alignItems: 'center',
+    marginTop: 4,
+    paddingHorizontal: 28,
+  },
+  title: {
+    fontSize: 28,
+    fontWeight: '700',
+    letterSpacing: -0.8,
+    lineHeight: 34,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 17,
+    fontWeight: '400',
+    lineHeight: 23,
+    marginTop: 14,
+    maxWidth: 350,
+    textAlign: 'center',
+  },
+  progress: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 34,
+  },
+  progressDot: {
+    borderRadius: 999,
+    height: 10,
+    width: 10,
+  },
+  progressActive: {
+    width: 32,
+  },
+  actions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingHorizontal: 50,
+    paddingTop: 24,
+  },
+  skipButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 50,
+    minWidth: 58,
+  },
+  skipText: {
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  nextButton: {
+    alignItems: 'center',
+    borderRadius: 28,
+    justifyContent: 'center',
+    minHeight: 50,
+    paddingHorizontal: 25,
+  },
+  nextText: {
+    fontSize: 17,
+    fontWeight: '700',
+  },
+  pressed: {
+    opacity: 0.7,
   },
 });
