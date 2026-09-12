@@ -51,6 +51,7 @@ export default function SignBeeApp() {
   const [showBooking, setShowBooking] = useState(false);
   const [showMatchScreen, setShowMatchScreen] = useState(false);
   const [showChatScreen, setShowChatScreen] = useState(false);
+  const [showPaymentSheet, setShowPaymentSheet] = useState(false);
 
   useEffect(() => {
     const transitionTimer = setTimeout(() => {
@@ -66,10 +67,20 @@ export default function SignBeeApp() {
   }
   if (showMatchScreen) {
     return (
-      <InterpreterMatchScreen
-        onBack={() => setShowMatchScreen(false)}
-        onBook={() => setShowChatScreen(true)}
-      />
+      <>
+        <InterpreterMatchScreen
+          onBack={() => setShowMatchScreen(false)}
+          onBook={() => setShowPaymentSheet(true)}
+        />
+        <PaymentMethodSheet
+          visible={showPaymentSheet}
+          onClose={() => setShowPaymentSheet(false)}
+          onSelect={() => {
+            setShowPaymentSheet(false);
+            setShowChatScreen(true);
+          }}
+        />
+      </>
     );
   }
   if (showBooking) {
@@ -1054,6 +1065,158 @@ function BookingScreen({
         }}
       />
     </View>
+  );
+}
+
+function PaymentMethodSheet({
+  visible,
+  onClose,
+  onSelect,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSelect: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [selectedMethod, setSelectedMethod] = useState<
+    'card' | 'bank' | null
+  >(null);
+
+  useEffect(() => {
+    if (visible) setSelectedMethod(null);
+  }, [visible]);
+
+  const selectMethod = (method: 'card' | 'bank') => {
+    setSelectedMethod(method);
+    void Haptics.selectionAsync();
+    onSelect();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={paymentStyles.modalRoot}>
+        <Pressable
+          style={paymentStyles.backdrop}
+          onPress={onClose}
+          accessibilityLabel="Close payment method"
+        />
+        <View
+          style={[
+            paymentStyles.sheet,
+            {
+              backgroundColor: colors.onboardingBackground,
+              paddingBottom: Math.max(insets.bottom, 28),
+            },
+          ]}
+          testID="payment-method-sheet"
+        >
+          <View style={paymentStyles.grabber} />
+          <View style={paymentStyles.header}>
+            <Text style={[paymentStyles.title, { color: colors.foreground }]}>
+              Payment method
+            </Text>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close payment method"
+              hitSlop={12}
+              style={({ pressed }) => [
+                paymentStyles.closeButton,
+                { backgroundColor: colors.softGray },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="close" size={21} color={colors.bodyText} />
+            </Pressable>
+          </View>
+
+          <View
+            style={[
+              paymentStyles.divider,
+              { backgroundColor: colors.divider },
+            ]}
+          />
+
+          <View style={paymentStyles.options}>
+            <PaymentMethodOption
+              icon="card-outline"
+              label="Debit/Credit Card"
+              selected={selectedMethod === 'card'}
+              colors={colors}
+              onPress={() => selectMethod('card')}
+            />
+            <PaymentMethodOption
+              icon="business-outline"
+              label="Bank Transfer"
+              selected={selectedMethod === 'bank'}
+              colors={colors}
+              onPress={() => selectMethod('bank')}
+            />
+          </View>
+
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Cancel payment method"
+            style={({ pressed }) => [
+              paymentStyles.cancelButton,
+              { backgroundColor: colors.triageCancel },
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text
+              style={[paymentStyles.cancelText, { color: colors.mutedForeground }]}
+            >
+              Cancel
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function PaymentMethodOption({
+  icon,
+  label,
+  selected,
+  colors,
+  onPress,
+}: {
+  icon: keyof typeof Ionicons.glyphMap;
+  label: string;
+  selected: boolean;
+  colors: ReturnType<typeof useColors>;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="radio"
+      accessibilityState={{ selected }}
+      accessibilityLabel={label}
+      style={({ pressed }) => [
+        paymentStyles.option,
+        { borderColor: colors.fieldBorder },
+        pressed && styles.pressed,
+      ]}
+    >
+      <Ionicons name={icon} size={28} color={colors.bodyText} />
+      <Text style={[paymentStyles.optionLabel, { color: colors.bodyText }]}>
+        {label}
+      </Text>
+      <Ionicons
+        name={selected ? 'radio-button-on' : 'radio-button-off'}
+        size={32}
+        color={selected ? colors.triageGreen : colors.fieldBorder}
+      />
+    </Pressable>
   );
 }
 
@@ -2385,6 +2548,84 @@ function TriageStep({
     </View>
   );
 }
+
+const paymentStyles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(51, 41, 79, 0.08)',
+  },
+  sheet: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    minHeight: '89%',
+    overflow: 'hidden',
+    paddingHorizontal: 50,
+  },
+  grabber: {
+    alignSelf: 'center',
+    backgroundColor: '#F1F0F3',
+    borderRadius: 999,
+    height: 6,
+    marginTop: 16,
+    width: 74,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 82,
+  },
+  title: {
+    fontSize: 40,
+    fontWeight: '700',
+    letterSpacing: -1.3,
+  },
+  closeButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  divider: {
+    height: 1,
+    marginTop: 42,
+  },
+  options: {
+    gap: 20,
+    marginTop: 72,
+  },
+  option: {
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 2,
+    flexDirection: 'row',
+    minHeight: 98,
+    paddingHorizontal: 31,
+  },
+  optionLabel: {
+    flex: 1,
+    fontSize: 28,
+    fontWeight: '600',
+    letterSpacing: -0.5,
+    marginLeft: 20,
+  },
+  cancelButton: {
+    alignItems: 'center',
+    borderRadius: 22,
+    justifyContent: 'center',
+    marginTop: 72,
+    minHeight: 80,
+  },
+  cancelText: {
+    fontSize: 27,
+    fontWeight: '700',
+  },
+});
 
 const chatStyles = StyleSheet.create({
   screen: {
