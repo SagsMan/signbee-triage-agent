@@ -3,6 +3,42 @@
 SignBee has two parts in this repository: a React Native/Expo Go frontend and
 a Python triage and interpreter-matching backend.
 
+## Quick start
+
+### Start in Replit
+
+1. Open the **SignBee Triage Agent** app preview.
+2. Wait for the Expo workflow to finish starting.
+3. Use the preview pane to view the app, or scan the displayed QR code with
+   Expo Go on your phone.
+
+The Replit workflow starts the mobile client with:
+
+```bash
+pnpm --filter @workspace/signbee-triage-agent run dev
+```
+
+### Start locally
+
+From the project root:
+
+```bash
+pnpm install
+pnpm --filter @workspace/signbee-triage-agent run dev
+```
+
+To run the Python triage agent as well, open a second terminal:
+
+```bash
+cd artifacts/signbee-triage-agent
+python -m pip install -r requirements.txt
+python demo_server.py
+```
+
+The demo server listens on `http://127.0.0.1:8000` and exposes the
+`POST /api/triage` endpoint. The Expo client and Python service are currently
+started independently.
+
 ## Frontend
 
 The root Expo app is the client-facing surface for the SignBee experience. It
