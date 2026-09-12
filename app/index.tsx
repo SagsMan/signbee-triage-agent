@@ -45,7 +45,7 @@ export default function SignBeeSplashScreen() {
             width: accessibilitySize,
             height: accessibilitySize,
             left: Math.max(width * 0.08, 24),
-            top: topInset + height * 0.45,
+            top: topInset + height * 0.35,
           },
         ]}
       >
@@ -88,8 +88,8 @@ const styles = StyleSheet.create({
     gap: 18,
   },
   wordmark: {
-    fontFamily: 'Inter_700Bold',
     fontSize: 30,
+    fontWeight: '800',
     letterSpacing: -1,
     lineHeight: 36,
   },
