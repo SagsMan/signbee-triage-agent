@@ -30,16 +30,6 @@ const slides = [
     description:
       'Connect with certified interpreters and bridge communication gaps instantly.',
   },
-  {
-    title: 'Find the Right Interpreter',
-    description:
-      'Discover certified interpreters who match your language, setting, and needs.',
-  },
-  {
-    title: 'Communicate With Confidence',
-    description:
-      'Get the support you need whenever communication matters most.',
-  },
 ];
 
 export default function SignBeeApp() {
@@ -264,12 +254,11 @@ function SignBeeOnboardingScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const [currentSlide, setCurrentSlide] = useState(0);
 
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
-  const slide = slides[currentSlide];
-  const isLastSlide = currentSlide === slides.length - 1;
+  const currentSlide = 0;
+  const slide = slides[0];
   const illustrationWidth = Math.min(width * 0.74, 300);
   const illustrationHeight = Math.min(Math.max(height * 0.36, 285), 340);
   const ringSize = Math.min(width * 0.53, 214);
@@ -277,16 +266,10 @@ function SignBeeOnboardingScreen() {
   const rightDotSize = Math.min(width * 0.1, 40);
   const leftDotSize = Math.min(width * 0.08, 32);
 
-  const advance = () => {
-    void Haptics.selectionAsync();
-    if (!isLastSlide) {
-      setCurrentSlide((value) => value + 1);
-    }
-  };
+  const advance = () => {};
 
   const skip = () => {
     void Haptics.selectionAsync();
-    setCurrentSlide(slides.length - 1);
   };
 
   return (
@@ -429,11 +412,11 @@ function SignBeeOnboardingScreen() {
             pressed && styles.pressed,
           ]}
           accessibilityRole="button"
-          accessibilityLabel={isLastSlide ? 'Finish onboarding' : 'Next onboarding page'}
+          accessibilityLabel="Next onboarding page"
           testID="next-onboarding"
         >
           <Text style={[styles.nextText, { color: colors.foreground }]}>
-            {isLastSlide ? 'Get started' : 'Next'}
+            Next
           </Text>
         </Pressable>
       </View>
