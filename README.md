@@ -146,3 +146,27 @@ The adapter is intentionally narrow. The agent should call the triage tool, pres
 MIT — see [LICENSE](LICENSE).
 
 Built for the Agents for Humans Hackathon · Submissions close September 14, 2026.
+
+
+<!-- signbee-agent-interface -->
+## SignBee Agent interface
+
+The SignBee Agent is the client-facing request and triage flow for connecting people with a qualified human interpreter, whether the request is in-person or virtual. The reference screens below capture the current mobile interaction direction.
+
+[Open the SignBee Agent Figma design](https://www.figma.com/design/jlwNxDyjd8rrAq3O1Poxrh/SignBee--Copy-?node-id=508-375&t=FBDmQw7TI4QPlodH-0)
+
+### Interface reference
+
+![SignBee Agent conversation](docs/screens/signbee-agent-chat.png)
+
+![SignBee Agent in-person request](docs/screens/signbee-agent-in-person.png)
+
+![SignBee Agent virtual request](docs/screens/signbee-agent-virtual.png)
+
+![SignBee Agent triage progress](docs/screens/signbee-agent-triage.png)
+
+### Frontend and backend direction
+
+- **Frontend:** React Native with Expo Go for the mobile client.
+- **Backend:** Keep the existing Python triage and matching service.
+- **Boundary:** The mobile app will call the Python service for intake, triage, matching, and status updates.
