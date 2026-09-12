@@ -348,7 +348,8 @@ function SignBeeOnboardingScreen() {
               {
                 width: characterSize,
                 height: characterSize,
-                bottom: illustrationHeight * 0.03,
+                bottom: illustrationHeight * 0.14,
+                transform: [{ translateX: Math.min(width * 0.02, 8) }],
               },
             ]}
           />
