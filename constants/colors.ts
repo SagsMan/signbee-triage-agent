@@ -17,6 +17,8 @@ const colors = {
     // Legacy aliases (kept for backward compatibility)
     text: '#000000',
     tint: '#AAF70A',
+    heading: '#33294F',
+    bodyText: '#403852',
 
     // Core surfaces
     background: '#AAF70A',
