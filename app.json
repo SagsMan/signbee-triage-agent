@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "SignBee Triage Agent",
+    "name": "SignBee",
     "slug": "signbee-triage-agent",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -19,7 +19,13 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "This helps us match you with the nearest available interpreter, especially for urgent requests."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

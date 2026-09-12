@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, {
   DateTimePickerEvent,
@@ -42,13 +43,13 @@ const slides = [
 ];
 
 export default function SignBeeApp() {
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(Platform.OS === 'web');
   const [showBooking, setShowBooking] = useState(false);
 
   useEffect(() => {
     const transitionTimer = setTimeout(() => {
       setShowOnboarding(true);
-    }, 2200);
+    }, 900);
 
     return () => clearTimeout(transitionTimer);
   }, []);
@@ -468,6 +469,8 @@ function BookingScreen({ onBack }: { onBack: () => void }) {
   const [openField, setOpenField] = useState<BookingField | null>(null);
   const [showFilterSheet, setShowFilterSheet] = useState(false);
   const [showTriageSheet, setShowTriageSheet] = useState(false);
+  const [showWebLocationPermission, setShowWebLocationPermission] =
+    useState(false);
   const [appliedFilters, setAppliedFilters] = useState<InterpreterFilters | null>(
     null,
   );
@@ -1123,6 +1126,10 @@ function InterpreterFilterSheet({
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const [locationPermission, requestLocationPermission] =
+    Location.useForegroundPermissions();
+  const [showWebLocationPermission, setShowWebLocationPermission] =
+    useState(false);
   const [mode, setMode] = useState<'in-person' | 'virtual'>(
     initialFilters?.mode || defaultMode,
   );
@@ -1139,6 +1146,25 @@ function InterpreterFilterSheet({
     setLocation(initialFilters?.location || '');
     setPreferredPlatform(initialFilters?.preferredPlatform || '');
   }, [defaultMode, initialFilters, visible]);
+
+  const useCurrentLocation = async () => {
+    if (Platform.OS === 'web') {
+      setShowWebLocationPermission(true);
+      return;
+    }
+
+    if (locationPermission?.granted) {
+      setLocation('Current location');
+      return;
+    }
+
+    const permission = await requestLocationPermission();
+    if (!permission.granted) {
+      return;
+    }
+
+    setLocation('Current location');
+  };
 
   return (
     <Modal
@@ -1285,7 +1311,9 @@ function InterpreterFilterSheet({
 
             {mode === 'in-person' && (
               <Pressable
-                onPress={() => setLocation('Current location')}
+                onPress={() => {
+                  void useCurrentLocation();
+                }}
                 accessibilityRole="button"
                 accessibilityLabel="Use my current location"
                 style={({ pressed }) => [
@@ -1309,6 +1337,20 @@ function InterpreterFilterSheet({
               </Pressable>
             )}
           </KeyboardAwareScrollViewCompat>
+
+          <LocationPermissionModal
+            visible={showWebLocationPermission}
+            onClose={() => setShowWebLocationPermission(false)}
+            onAllow={async () => {
+              setShowWebLocationPermission(false);
+              const permission = locationPermission?.granted
+                ? locationPermission
+                : await requestLocationPermission();
+              if (permission.granted) {
+                setLocation('Current location');
+              }
+            }}
+          />
 
           <View style={filterSheetStyles.footer}>
             <Pressable
@@ -1344,6 +1386,157 @@ function InterpreterFilterSheet({
             >
               <Text style={[filterSheetStyles.applyText, { color: colors.brandInk }]}>
                 Submit
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function LocationPermissionModal({
+  visible,
+  onClose,
+  onAllow,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onAllow: () => Promise<void>;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View
+        style={[
+          locationPermissionStyles.modalRoot,
+          { backgroundColor: colors.onboardingBackground },
+        ]}
+      >
+        <View
+          style={[
+            locationPermissionStyles.content,
+            { paddingTop: topInset, paddingBottom: bottomInset },
+          ]}
+        >
+          <View
+            style={[
+              locationPermissionStyles.grabber,
+              { backgroundColor: colors.softGray },
+            ]}
+          />
+
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close location permission prompt"
+            hitSlop={12}
+            style={({ pressed }) => [
+              locationPermissionStyles.closeButton,
+              { backgroundColor: colors.softGray },
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons name="close" size={24} color={colors.bodyText} />
+          </Pressable>
+
+          <View
+            style={[
+              locationPermissionStyles.checkCircle,
+              { backgroundColor: colors.softGreen },
+            ]}
+          >
+            <Ionicons name="checkmark" size={54} color={colors.locationGreen} />
+          </View>
+
+          <Text
+            style={[
+              locationPermissionStyles.title,
+              { color: colors.foreground },
+            ]}
+            accessibilityRole="header"
+          >
+            Allow “SignBee” to use{'\n'}your location?
+          </Text>
+          <Text
+            style={[
+              locationPermissionStyles.description,
+              { color: colors.bodyText },
+            ]}
+          >
+            This helps us match you with the{'\n'}nearest available interpreter, especially{'\n'}for urgent requests.
+          </Text>
+
+          <View style={locationPermissionStyles.actions}>
+            <Pressable
+              onPress={() => {
+                void onAllow();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Allow SignBee to use your location while using the app"
+              style={({ pressed }) => [
+                locationPermissionStyles.allowButton,
+                { backgroundColor: colors.tint },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={[
+                  locationPermissionStyles.allowText,
+                  { color: colors.brandInk },
+                ]}
+              >
+                Allow While Using App
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={() => {
+                void onAllow();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Allow SignBee to use your location once"
+              style={({ pressed }) => [
+                locationPermissionStyles.onceButton,
+                { backgroundColor: colors.triageCancel },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={[
+                  locationPermissionStyles.onceText,
+                  { color: colors.mutedForeground },
+                ]}
+              >
+                Allow once
+              </Text>
+            </Pressable>
+
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Do not allow SignBee to use your location"
+              style={({ pressed }) => [
+                locationPermissionStyles.denyButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text
+                style={[
+                  locationPermissionStyles.denyText,
+                  { color: colors.mutedForeground },
+                ]}
+              >
+                Don’t Allow
               </Text>
             </Pressable>
           </View>
@@ -1534,6 +1727,91 @@ function TriageStep({
     </View>
   );
 }
+
+const locationPermissionStyles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+  },
+  content: {
+    alignItems: 'center',
+    flex: 1,
+    paddingHorizontal: 28,
+  },
+  grabber: {
+    borderRadius: 999,
+    height: 6,
+    marginTop: 16,
+    width: 74,
+  },
+  closeButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-end',
+    borderRadius: 999,
+    height: 40,
+    justifyContent: 'center',
+    marginRight: 4,
+    marginTop: 38,
+    width: 40,
+  },
+  checkCircle: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 128,
+    justifyContent: 'center',
+    marginTop: 2,
+    width: 128,
+  },
+  title: {
+    fontSize: 30,
+    fontWeight: '700',
+    lineHeight: 38,
+    marginTop: 46,
+    textAlign: 'center',
+  },
+  description: {
+    fontSize: 20,
+    lineHeight: 33,
+    marginTop: 28,
+    textAlign: 'center',
+  },
+  actions: {
+    alignSelf: 'stretch',
+    marginTop: 'auto',
+  },
+  allowButton: {
+    alignItems: 'center',
+    borderRadius: 28,
+    justifyContent: 'center',
+    minHeight: 74,
+    paddingHorizontal: 18,
+  },
+  allowText: {
+    fontSize: 21,
+    fontWeight: '700',
+  },
+  onceButton: {
+    alignItems: 'center',
+    borderRadius: 28,
+    justifyContent: 'center',
+    marginTop: 16,
+    minHeight: 74,
+    paddingHorizontal: 18,
+  },
+  onceText: {
+    fontSize: 21,
+    fontWeight: '600',
+  },
+  denyButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 74,
+    paddingHorizontal: 18,
+  },
+  denyText: {
+    fontSize: 21,
+    fontWeight: '600',
+  },
+});
 
 const triageStyles = StyleSheet.create({
   modalRoot: {
