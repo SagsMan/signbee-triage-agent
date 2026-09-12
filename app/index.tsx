@@ -1,6 +1,7 @@
 import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   Animated,
+  FlatList,
   Image,
   Modal,
   Platform,
@@ -20,6 +21,7 @@ import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, {
   DateTimePickerEvent,
 } from '@react-native-community/datetimepicker';
+import { KeyboardAvoidingView } from 'react-native-keyboard-controller';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path } from 'react-native-svg';
 import { KeyboardAwareScrollViewCompat } from '@/components/KeyboardAwareScrollViewCompat';
@@ -48,6 +50,7 @@ export default function SignBeeApp() {
   const [showOnboarding, setShowOnboarding] = useState(Platform.OS === 'web');
   const [showBooking, setShowBooking] = useState(false);
   const [showMatchScreen, setShowMatchScreen] = useState(false);
+  const [showChatScreen, setShowChatScreen] = useState(false);
 
   useEffect(() => {
     const transitionTimer = setTimeout(() => {
@@ -58,8 +61,16 @@ export default function SignBeeApp() {
   }, []);
 
   if (!showOnboarding) return <SignBeeSplashScreen />;
+  if (showChatScreen) {
+    return <InterpreterChatScreen onBack={() => setShowChatScreen(false)} />;
+  }
   if (showMatchScreen) {
-    return <InterpreterMatchScreen onBack={() => setShowMatchScreen(false)} />;
+    return (
+      <InterpreterMatchScreen
+        onBack={() => setShowMatchScreen(false)}
+        onBook={() => setShowChatScreen(true)}
+      />
+    );
   }
   if (showBooking) {
     return (
@@ -1048,11 +1059,16 @@ function BookingScreen({
 
 type MatchTab = 'About' | 'Availability' | 'Reviews';
 
-function InterpreterMatchScreen({ onBack }: { onBack: () => void }) {
+function InterpreterMatchScreen({
+  onBack,
+  onBook,
+}: {
+  onBack: () => void;
+  onBook: () => void;
+}) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const [activeTab, setActiveTab] = useState<MatchTab>('About');
-  const [booked, setBooked] = useState(false);
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
 
@@ -1291,9 +1307,9 @@ function InterpreterMatchScreen({ onBack }: { onBack: () => void }) {
         )}
 
         <Pressable
-          onPress={() => setBooked(true)}
+          onPress={onBook}
           accessibilityRole="button"
-          accessibilityLabel={booked ? 'Booking confirmed' : 'Book Mary Olayemi now'}
+          accessibilityLabel="Book Mary Olayemi now"
           style={({ pressed }) => [
             matchStyles.bookButton,
             { backgroundColor: colors.tint },
@@ -1301,7 +1317,7 @@ function InterpreterMatchScreen({ onBack }: { onBack: () => void }) {
           ]}
         >
           <Text style={[matchStyles.bookButtonText, { color: colors.brandInk }]}>
-            {booked ? 'Booked with Mary' : 'Book Now'}
+            Book Now
           </Text>
         </Pressable>
         <Pressable
@@ -1319,6 +1335,265 @@ function InterpreterMatchScreen({ onBack }: { onBack: () => void }) {
           </Text>
         </Pressable>
       </ScrollView>
+    </View>
+  );
+}
+
+type ChatMessage = {
+  id: string;
+  incoming: boolean;
+  text: string;
+  time: string;
+};
+
+const initialChatMessages: ChatMessage[] = [
+  {
+    id: 'message-4',
+    incoming: false,
+    text: 'Alright, See you.',
+    time: 'Just now',
+  },
+  {
+    id: 'message-3',
+    incoming: true,
+    text: 'Alright, noted. Looking forward to supporting your event.',
+    time: '09:16 AM',
+  },
+  {
+    id: 'message-2',
+    incoming: false,
+    text: 'Hello Steve! Thanks for reaching out, it’s a business workshop by 10 AM, at our Lagos office. It’ll be in-person.',
+    time: '09:15 AM',
+  },
+  {
+    id: 'message-1',
+    incoming: true,
+    text: 'Hi Ify, I’m Mary, your interpreter for tomorrow’s event. Do you have any specific requests or information I should know before the session?',
+    time: '09:10 AM',
+  },
+];
+
+function InterpreterChatScreen({ onBack }: { onBack: () => void }) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [draft, setDraft] = useState('');
+  const [messages, setMessages] = useState<ChatMessage[]>(initialChatMessages);
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+
+  const sendMessage = () => {
+    const text = draft.trim();
+    if (!text) return;
+
+    setMessages((current) => [
+      {
+        id: `message-${Date.now()}`,
+        incoming: false,
+        text,
+        time: 'Just now',
+      },
+      ...current,
+    ]);
+    setDraft('');
+    void Haptics.selectionAsync();
+  };
+
+  return (
+    <View
+      style={[chatStyles.screen, { backgroundColor: colors.onboardingBackground }]}
+      testID="interpreter-chat-screen"
+    >
+      <StatusBar barStyle="dark-content" backgroundColor={colors.onboardingBackground} />
+      <KeyboardAvoidingView
+        behavior="padding"
+        keyboardVerticalOffset={0}
+        style={chatStyles.keyboardRoot}
+      >
+        <View
+          style={[
+            chatStyles.header,
+            {
+              paddingTop: topInset,
+              backgroundColor: colors.onboardingBackground,
+              borderBottomColor: colors.divider,
+            },
+          ]}
+        >
+          <View style={chatStyles.headerRow}>
+            <Pressable
+              onPress={onBack}
+              accessibilityRole="button"
+              accessibilityLabel="Back to Mary Olayemi's profile"
+              hitSlop={12}
+              style={({ pressed }) => [
+                chatStyles.headerBack,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="arrow-back" size={22} color={colors.foreground} />
+            </Pressable>
+            <Image
+              source={maryOlayemi}
+              resizeMode="cover"
+              style={chatStyles.avatar}
+              accessibilityLabel="Mary Olayemi"
+            />
+            <View style={chatStyles.identity}>
+              <Text style={[chatStyles.name, { color: colors.foreground }]}>
+                Mary Olayemi
+              </Text>
+              <View style={chatStyles.onlineRow}>
+                <View style={[chatStyles.onlineDot, { backgroundColor: colors.triageGreen }]} />
+                <Text style={[chatStyles.onlineText, { color: colors.mutedForeground }]}>
+                  Online
+                </Text>
+              </View>
+            </View>
+            <View style={chatStyles.headerActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Call Mary Olayemi"
+                hitSlop={8}
+                style={({ pressed }) => [
+                  chatStyles.headerAction,
+                  { backgroundColor: colors.softGray },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons name="call-outline" size={21} color={colors.locationGreen} />
+              </Pressable>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Start a video call with Mary Olayemi"
+                hitSlop={8}
+                style={({ pressed }) => [
+                  chatStyles.headerAction,
+                  { backgroundColor: colors.softGray },
+                  pressed && styles.pressed,
+                ]}
+              >
+                <Ionicons name="videocam-outline" size={21} color={colors.locationGreen} />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        <View style={chatStyles.startedRow}>
+          <View style={[chatStyles.startedLine, { backgroundColor: colors.divider }]} />
+          <Text style={[chatStyles.startedText, { color: colors.placeholder }]}>
+            Steve just started a conversation
+          </Text>
+          <View style={[chatStyles.startedLine, { backgroundColor: colors.divider }]} />
+        </View>
+
+        <FlatList
+          inverted
+          data={messages}
+          keyExtractor={(item) => item.id}
+          keyboardDismissMode="interactive"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          style={chatStyles.messageList}
+          contentContainerStyle={chatStyles.messageContent}
+          renderItem={({ item }) => (
+            <ChatBubble message={item} colors={colors} />
+          )}
+        />
+
+        <View
+          style={[
+            chatStyles.composerArea,
+            {
+              backgroundColor: colors.onboardingBackground,
+              paddingBottom: bottomInset + 13,
+            },
+          ]}
+        >
+          <View style={[chatStyles.composer, { borderColor: colors.fieldBorder }]}>
+            <Ionicons name="attach-outline" size={17} color={colors.placeholder} />
+            <TextInput
+              value={draft}
+              onChangeText={setDraft}
+              onSubmitEditing={sendMessage}
+              placeholder="Message"
+              placeholderTextColor={colors.placeholder}
+              returnKeyType="send"
+              style={[chatStyles.input, { color: colors.bodyText }]}
+              accessibilityLabel="Message Mary Olayemi"
+            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Record a voice message"
+              hitSlop={8}
+              style={({ pressed }) => [pressed && styles.pressed]}
+            >
+              <Ionicons name="mic-outline" size={17} color={colors.placeholder} />
+            </Pressable>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Take a photo"
+              hitSlop={8}
+              style={({ pressed }) => [pressed && styles.pressed]}
+            >
+              <Ionicons name="camera-outline" size={17} color={colors.placeholder} />
+            </Pressable>
+            <Pressable
+              onPress={sendMessage}
+              accessibilityRole="button"
+              accessibilityLabel="Send message"
+              hitSlop={8}
+              style={({ pressed }) => [
+                chatStyles.sendButton,
+                { backgroundColor: colors.softGreen },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="send" size={17} color={colors.locationGreen} />
+            </Pressable>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </View>
+  );
+}
+
+function ChatBubble({
+  message,
+  colors,
+}: {
+  message: ChatMessage;
+  colors: ReturnType<typeof useColors>;
+}) {
+  return (
+    <View
+      style={[
+        chatStyles.messageRow,
+        message.incoming ? chatStyles.incomingRow : chatStyles.outgoingRow,
+      ]}
+    >
+      <View
+        style={[
+          chatStyles.bubble,
+          message.incoming
+            ? { backgroundColor: colors.softGray }
+            : { backgroundColor: colors.softGreen },
+        ]}
+      >
+        <Text style={[chatStyles.messageText, { color: colors.bodyText }]}>
+          {message.text}
+        </Text>
+      </View>
+      <View
+        style={[
+          chatStyles.metaRow,
+          message.incoming ? chatStyles.incomingMeta : chatStyles.outgoingMeta,
+        ]}
+      >
+        <Text style={[chatStyles.time, { color: colors.placeholder }]}>
+          {message.time}
+        </Text>
+        <Ionicons name="checkmark-done" size={15} color={colors.locationGreen} />
+      </View>
     </View>
   );
 }
@@ -2110,6 +2385,156 @@ function TriageStep({
     </View>
   );
 }
+
+const chatStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  keyboardRoot: {
+    flex: 1,
+  },
+  header: {
+    borderBottomWidth: 0,
+  },
+  headerRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    height: 72,
+    paddingHorizontal: 30,
+  },
+  headerBack: {
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    marginRight: 11,
+    width: 28,
+  },
+  avatar: {
+    borderRadius: 22,
+    height: 43,
+    marginRight: 11,
+    width: 43,
+  },
+  identity: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  name: {
+    fontSize: 16,
+    fontWeight: '700',
+    letterSpacing: -0.2,
+  },
+  onlineRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    marginTop: 5,
+  },
+  onlineDot: {
+    borderRadius: 4,
+    height: 7,
+    marginRight: 7,
+    width: 7,
+  },
+  onlineText: {
+    fontSize: 13,
+  },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 11,
+  },
+  headerAction: {
+    alignItems: 'center',
+    borderRadius: 22,
+    height: 43,
+    justifyContent: 'center',
+    width: 43,
+  },
+  startedRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    paddingBottom: 25,
+    paddingHorizontal: 32,
+    paddingTop: 34,
+  },
+  startedLine: {
+    flex: 1,
+    height: 1,
+  },
+  startedText: {
+    fontSize: 13,
+  },
+  messageList: {
+    flex: 1,
+  },
+  messageContent: {
+    paddingBottom: 15,
+    paddingHorizontal: 31,
+    paddingTop: 12,
+  },
+  messageRow: {
+    marginBottom: 13,
+  },
+  incomingRow: {
+    alignItems: 'flex-start',
+  },
+  outgoingRow: {
+    alignItems: 'flex-end',
+  },
+  bubble: {
+    borderRadius: 23,
+    maxWidth: '92%',
+    paddingHorizontal: 26,
+    paddingVertical: 21,
+  },
+  messageText: {
+    fontSize: 15,
+    lineHeight: 21,
+  },
+  metaRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 7,
+    marginTop: 9,
+  },
+  incomingMeta: {
+    alignSelf: 'flex-start',
+  },
+  outgoingMeta: {
+    alignSelf: 'flex-end',
+  },
+  time: {
+    fontSize: 12,
+  },
+  composerArea: {
+    paddingHorizontal: 31,
+    paddingTop: 11,
+  },
+  composer: {
+    alignItems: 'center',
+    borderRadius: 35,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 11,
+    height: 68,
+    paddingLeft: 12,
+    paddingRight: 7,
+  },
+  input: {
+    flex: 1,
+    fontSize: 13,
+    minWidth: 0,
+    paddingHorizontal: 0,
+    paddingVertical: 0,
+  },
+  sendButton: {
+    alignItems: 'center',
+    borderRadius: 20,
+    height: 39,
+    justifyContent: 'center',
+    width: 39,
+  },
+});
 
 const matchStyles = StyleSheet.create({
   screen: {
