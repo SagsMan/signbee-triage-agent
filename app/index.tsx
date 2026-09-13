@@ -37,6 +37,8 @@ const onboardingCharacter = require('@/assets/images/onboarding-character.png');
 const onboardingDotLeft = require('@/assets/images/onboarding-dot-left.png');
 const onboardingDotRight = require('@/assets/images/onboarding-dot-right.png');
 const maryOlayemi = require('@/assets/images/mary-olayemi.png');
+const uzorKenny = require('@/assets/images/uzor-kenny.png');
+const amaraJohn = require('@/assets/images/amara-john.png');
 const ratingStar = require('@/assets/images/rating-star.png');
 const signbeeAgentMark = require('@/assets/images/signbee-agent-mark.png');
 
@@ -54,6 +56,7 @@ export default function SignBeeApp() {
   const [showMatchScreen, setShowMatchScreen] = useState(false);
   const [showArrivalScreen, setShowArrivalScreen] = useState(false);
   const [showChatScreen, setShowChatScreen] = useState(false);
+  const [showBackupScreen, setShowBackupScreen] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   const [showCardDetailsSheet, setShowCardDetailsSheet] = useState(false);
   const [showBankTransferSheet, setShowBankTransferSheet] = useState(false);
@@ -67,6 +70,19 @@ export default function SignBeeApp() {
   }, []);
 
   if (!showOnboarding) return <SignBeeSplashScreen />;
+  if (showBackupScreen) {
+    return (
+      <InterpreterBackupsScreen
+        onClose={() => {
+          setShowBackupScreen(false);
+          setShowArrivalScreen(false);
+          setShowMatchScreen(false);
+          setShowBooking(false);
+          setShowOnboarding(true);
+        }}
+      />
+    );
+  }
   if (showChatScreen) {
     return <InterpreterChatScreen onBack={() => setShowChatScreen(false)} />;
   }
@@ -81,7 +97,7 @@ export default function SignBeeApp() {
           setShowArrivalScreen(false);
           setShowMatchScreen(false);
           setShowBooking(false);
-          setShowOnboarding(true);
+          setShowBackupScreen(true);
         }}
       />
     );
@@ -2300,6 +2316,191 @@ function InterpreterArrivalScreen({
   );
 }
 
+const standbyInterpreters = [
+  {
+    id: 'uzor-kenny',
+    name: 'Uzor Kenny',
+    eta: '14 min away',
+    image: uzorKenny,
+  },
+  {
+    id: 'amara-john-first',
+    name: 'Amara John',
+    eta: '16 min away',
+    image: amaraJohn,
+  },
+  {
+    id: 'amara-john-second',
+    name: 'Amara John',
+    eta: '14 min away',
+    image: maryOlayemi,
+  },
+];
+
+function InterpreterBackupsScreen({ onClose }: { onClose: () => void }) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const topInset = Platform.OS === 'web' ? 32 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const compact = width < 380;
+  const horizontalPadding = Math.max(24, Math.min(50, width * 0.067));
+
+  return (
+    <View
+      style={[
+        backupsStyles.screen,
+        { backgroundColor: colors.onboardingBackground },
+      ]}
+      testID="interpreter-backups-screen"
+    >
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={colors.onboardingBackground}
+      />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          backupsStyles.content,
+          {
+            minHeight: height,
+            paddingBottom: bottomInset,
+            paddingHorizontal: horizontalPadding,
+            paddingTop: topInset,
+          },
+        ]}
+      >
+        <View style={backupsStyles.grabber} />
+
+        <View style={backupsStyles.header}>
+          <Text
+            style={[
+              backupsStyles.title,
+              {
+                color: colors.foreground,
+                fontSize: compact ? 31 : 38,
+                lineHeight: compact ? 38 : 46,
+              },
+            ]}
+            accessibilityRole="header"
+          >
+            Backups on standby
+          </Text>
+          <Pressable
+            onPress={onClose}
+            accessibilityRole="button"
+            accessibilityLabel="Close backups on standby"
+            hitSlop={12}
+            style={({ pressed }) => [
+              backupsStyles.closeButton,
+              { backgroundColor: colors.softGray },
+              pressed && styles.pressed,
+            ]}
+          >
+            <Ionicons name="close" size={24} color={colors.bodyText} />
+          </Pressable>
+        </View>
+
+        <View
+          style={[backupsStyles.divider, { backgroundColor: colors.divider }]}
+        />
+
+        <View style={backupsStyles.options}>
+          {standbyInterpreters.map((interpreter) => (
+            <View
+              key={interpreter.id}
+              style={[
+                backupsStyles.option,
+                {
+                  borderColor: colors.fieldBorder,
+                  minHeight: compact ? 116 : 126,
+                },
+              ]}
+            >
+              <Image
+                source={interpreter.image}
+                resizeMode="cover"
+                style={[
+                  backupsStyles.portrait,
+                  {
+                    height: compact ? 68 : 78,
+                    width: compact ? 68 : 78,
+                  },
+                ]}
+                accessibilityLabel={`${interpreter.name} portrait`}
+              />
+              <View style={backupsStyles.interpreterCopy}>
+                <Text
+                  style={[
+                    backupsStyles.interpreterName,
+                    {
+                      color: colors.foreground,
+                      fontSize: compact ? 19 : 22,
+                      lineHeight: compact ? 25 : 28,
+                    },
+                  ]}
+                >
+                  {interpreter.name}
+                </Text>
+                <Text
+                  style={[
+                    backupsStyles.interpreterEta,
+                    {
+                      color: colors.locationGreen,
+                      fontSize: compact ? 16 : 19,
+                      lineHeight: compact ? 21 : 25,
+                    },
+                  ]}
+                >
+                  {interpreter.eta}
+                </Text>
+              </View>
+              <View
+                style={[
+                  backupsStyles.ratePill,
+                  { backgroundColor: colors.softGray },
+                ]}
+              >
+                <Text
+                  style={[
+                    backupsStyles.rateText,
+                    {
+                      color: colors.mutedForeground,
+                      fontSize: compact ? 14 : 17,
+                    },
+                  ]}
+                >
+                  ₦ 20,000/hr
+                </Text>
+              </View>
+            </View>
+          ))}
+        </View>
+
+        <Pressable
+          onPress={onClose}
+          accessibilityRole="button"
+          accessibilityLabel="Cancel and close backups"
+          style={({ pressed }) => [
+            backupsStyles.cancelButton,
+            { backgroundColor: colors.triageCancel },
+            pressed && styles.pressed,
+          ]}
+        >
+          <Text
+            style={[
+              backupsStyles.cancelText,
+              { color: colors.placeholder },
+            ]}
+          >
+            Cancel
+          </Text>
+        </Pressable>
+      </ScrollView>
+    </View>
+  );
+}
+
 type ChatMessage = {
   id: string;
   incoming: boolean;
@@ -3677,6 +3878,92 @@ const arrivalStyles = StyleSheet.create({
     fontSize: 24,
     fontWeight: '600',
     letterSpacing: -0.5,
+  },
+});
+
+const backupsStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  content: {
+    flexGrow: 1,
+  },
+  grabber: {
+    alignSelf: 'center',
+    backgroundColor: '#F1F0F3',
+    borderRadius: 999,
+    height: 6,
+    marginTop: 14,
+    width: 74,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 56,
+  },
+  title: {
+    flex: 1,
+    fontWeight: '700',
+    letterSpacing: -1.1,
+  },
+  closeButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 40,
+    justifyContent: 'center',
+    marginLeft: 16,
+    width: 40,
+  },
+  divider: {
+    height: 1,
+    marginTop: 38,
+  },
+  options: {
+    gap: 20,
+    marginTop: 70,
+  },
+  option: {
+    alignItems: 'center',
+    borderRadius: 20,
+    borderWidth: 2,
+    flexDirection: 'row',
+    paddingHorizontal: 28,
+  },
+  portrait: {
+    borderRadius: 999,
+  },
+  interpreterCopy: {
+    flex: 1,
+    marginLeft: 20,
+  },
+  interpreterName: {
+    fontWeight: '600',
+    letterSpacing: -0.5,
+  },
+  interpreterEta: {
+    fontWeight: '500',
+    marginTop: 3,
+  },
+  ratePill: {
+    borderRadius: 10,
+    marginLeft: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  rateText: {
+    fontWeight: '500',
+  },
+  cancelButton: {
+    alignItems: 'center',
+    borderRadius: 22,
+    justifyContent: 'center',
+    marginTop: 'auto',
+    minHeight: 78,
+  },
+  cancelText: {
+    fontSize: 26,
+    fontWeight: '700',
   },
 });
 
