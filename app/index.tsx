@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import * as ImagePicker from 'expo-image-picker';
+import * as Clipboard from 'expo-clipboard';
 import * as Location from 'expo-location';
 import { Ionicons } from '@expo/vector-icons';
 import DateTimePicker, {
@@ -1260,13 +1261,7 @@ function BankTransferSheet({
   }, [visible]);
 
   const copyValue = async (field: string, value: string) => {
-    if (
-      Platform.OS === 'web' &&
-      typeof navigator !== 'undefined' &&
-      navigator.clipboard
-    ) {
-      await navigator.clipboard.writeText(value);
-    }
+    await Clipboard.setStringAsync(value);
     setCopiedField(field);
     void Haptics.selectionAsync();
   };
