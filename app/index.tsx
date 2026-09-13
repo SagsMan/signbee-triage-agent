@@ -52,6 +52,7 @@ export default function SignBeeApp() {
   const [showMatchScreen, setShowMatchScreen] = useState(false);
   const [showChatScreen, setShowChatScreen] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [showCardDetailsSheet, setShowCardDetailsSheet] = useState(false);
 
   useEffect(() => {
     const transitionTimer = setTimeout(() => {
@@ -75,8 +76,20 @@ export default function SignBeeApp() {
         <PaymentMethodSheet
           visible={showPaymentSheet}
           onClose={() => setShowPaymentSheet(false)}
-          onSelect={() => {
+          onSelect={(method) => {
             setShowPaymentSheet(false);
+            if (method === 'card') {
+              setShowCardDetailsSheet(true);
+            } else {
+              setShowChatScreen(true);
+            }
+          }}
+        />
+        <CardDetailsSheet
+          visible={showCardDetailsSheet}
+          onClose={() => setShowCardDetailsSheet(false)}
+          onPay={() => {
+            setShowCardDetailsSheet(false);
             setShowChatScreen(true);
           }}
         />
@@ -1075,7 +1088,7 @@ function PaymentMethodSheet({
 }: {
   visible: boolean;
   onClose: () => void;
-  onSelect: () => void;
+  onSelect: (method: 'card' | 'bank') => void;
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
@@ -1090,7 +1103,7 @@ function PaymentMethodSheet({
   const selectMethod = (method: 'card' | 'bank') => {
     setSelectedMethod(method);
     void Haptics.selectionAsync();
-    onSelect();
+    onSelect(method);
   };
 
   return (
@@ -1217,6 +1230,228 @@ function PaymentMethodOption({
         color={selected ? colors.triageGreen : colors.fieldBorder}
       />
     </Pressable>
+  );
+}
+
+function CardDetailsSheet({
+  visible,
+  onClose,
+  onPay,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onPay: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [cardNumber, setCardNumber] = useState('');
+  const [expiryDate, setExpiryDate] = useState('');
+  const [cvv, setCvv] = useState('');
+
+  useEffect(() => {
+    if (!visible) {
+      setCardNumber('');
+      setExpiryDate('');
+      setCvv('');
+    }
+  }, [visible]);
+
+  const formatCardNumber = (value: string) =>
+    value
+      .replace(/\D/g, '')
+      .slice(0, 16)
+      .replace(/(.{4})/g, '$1 ')
+      .trim();
+
+  const formatExpiryDate = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 4);
+    return digits.length > 2
+      ? `${digits.slice(0, 2)}/${digits.slice(2)}`
+      : digits;
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={cardDetailsStyles.modalRoot}>
+        <Pressable
+          style={cardDetailsStyles.backdrop}
+          onPress={onClose}
+          accessibilityLabel="Close card details"
+        />
+        <View
+          style={[
+            cardDetailsStyles.sheet,
+            {
+              backgroundColor: colors.onboardingBackground,
+              paddingBottom: Math.max(insets.bottom, 22),
+            },
+          ]}
+          testID="card-details-sheet"
+        >
+          <View style={cardDetailsStyles.grabber} />
+          <View style={cardDetailsStyles.header}>
+            <Text
+              style={[cardDetailsStyles.title, { color: colors.foreground }]}
+              accessibilityRole="header"
+            >
+              Enter card details
+            </Text>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close card details"
+              hitSlop={12}
+              style={({ pressed }) => [
+                cardDetailsStyles.closeButton,
+                { backgroundColor: colors.softGray },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="close" size={22} color={colors.bodyText} />
+            </Pressable>
+          </View>
+          <View
+            style={[
+              cardDetailsStyles.divider,
+              { backgroundColor: colors.divider },
+            ]}
+          />
+
+          <KeyboardAwareScrollViewCompat
+            contentContainerStyle={cardDetailsStyles.content}
+            keyboardShouldPersistTaps="handled"
+            bottomOffset={100}
+            showsVerticalScrollIndicator={false}
+          >
+            <Text style={[cardDetailsStyles.fieldLabel, { color: colors.bodyText }]}>
+              Card number
+            </Text>
+            <TextInput
+              value={cardNumber}
+              onChangeText={(value) => setCardNumber(formatCardNumber(value))}
+              placeholder="0000 0000 0000 0000"
+              placeholderTextColor={colors.placeholder}
+              keyboardType="number-pad"
+              maxLength={19}
+              style={[
+                cardDetailsStyles.cardNumberInput,
+                {
+                  borderColor: colors.fieldBorder,
+                  color: colors.bodyText,
+                },
+              ]}
+              accessibilityLabel="Card number"
+              autoComplete="cc-number"
+            />
+
+            <View style={cardDetailsStyles.detailRow}>
+              <View style={cardDetailsStyles.detailColumn}>
+                <Text style={[cardDetailsStyles.fieldLabel, { color: colors.bodyText }]}>
+                  Expiry date
+                </Text>
+                <View
+                  style={[
+                    cardDetailsStyles.detailInputFrame,
+                    { borderColor: colors.fieldBorder },
+                  ]}
+                >
+                  <TextInput
+                    value={expiryDate}
+                    onChangeText={(value) => setExpiryDate(formatExpiryDate(value))}
+                    placeholder="MM/YY"
+                    placeholderTextColor={colors.placeholder}
+                    keyboardType="number-pad"
+                    maxLength={5}
+                    style={[
+                      cardDetailsStyles.detailInput,
+                      { color: colors.bodyText },
+                    ]}
+                    accessibilityLabel="Expiry date"
+                    autoComplete="cc-exp"
+                  />
+                  <Ionicons
+                    name="calendar-outline"
+                    size={28}
+                    color={colors.brandInk}
+                  />
+                </View>
+              </View>
+
+              <View style={cardDetailsStyles.detailColumn}>
+                <Text style={[cardDetailsStyles.fieldLabel, { color: colors.bodyText }]}>
+                  CVV
+                </Text>
+                <View
+                  style={[
+                    cardDetailsStyles.detailInputFrame,
+                    { borderColor: colors.fieldBorder },
+                  ]}
+                >
+                  <TextInput
+                    value={cvv}
+                    onChangeText={(value) => setCvv(value.replace(/\D/g, '').slice(0, 3))}
+                    placeholder="123"
+                    placeholderTextColor={colors.placeholder}
+                    keyboardType="number-pad"
+                    maxLength={3}
+                    secureTextEntry
+                    style={[
+                      cardDetailsStyles.detailInput,
+                      { color: colors.bodyText },
+                    ]}
+                    accessibilityLabel="Card security code"
+                    autoComplete="cc-csc"
+                  />
+                  <Ionicons
+                    name="chevron-down"
+                    size={25}
+                    color={colors.mutedForeground}
+                  />
+                </View>
+              </View>
+            </View>
+          </KeyboardAwareScrollViewCompat>
+
+          <View style={cardDetailsStyles.footer}>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel card payment"
+              style={({ pressed }) => [
+                cardDetailsStyles.cancelButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[cardDetailsStyles.cancelText, { color: colors.brandInk }]}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                void Haptics.selectionAsync();
+                onPay();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Pay with card"
+              style={({ pressed }) => [
+                cardDetailsStyles.payButton,
+                { backgroundColor: colors.tint },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[cardDetailsStyles.payText, { color: colors.brandInk }]}>
+                Pay
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -2548,6 +2783,125 @@ function TriageStep({
     </View>
   );
 }
+
+const cardDetailsStyles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(51, 41, 79, 0.08)',
+  },
+  sheet: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    flex: 1,
+    maxHeight: '100%',
+    minHeight: '93%',
+    overflow: 'hidden',
+    paddingHorizontal: 50,
+  },
+  grabber: {
+    alignSelf: 'center',
+    backgroundColor: '#F1F0F3',
+    borderRadius: 999,
+    height: 6,
+    marginTop: 14,
+    width: 74,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 87,
+  },
+  title: {
+    fontSize: 40,
+    fontWeight: '600',
+    letterSpacing: -1.2,
+  },
+  closeButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  divider: {
+    height: 1,
+    marginTop: 42,
+  },
+  content: {
+    paddingBottom: 24,
+  },
+  fieldLabel: {
+    fontSize: 27,
+    fontWeight: '600',
+    letterSpacing: -0.6,
+    lineHeight: 34,
+    marginBottom: 31,
+  },
+  cardNumberInput: {
+    borderRadius: 18,
+    borderWidth: 2,
+    fontSize: 27,
+    minHeight: 100,
+    paddingHorizontal: 32,
+  },
+  detailRow: {
+    flexDirection: 'row',
+    gap: 18,
+    marginTop: 35,
+  },
+  detailColumn: {
+    flex: 1,
+  },
+  detailInputFrame: {
+    alignItems: 'center',
+    borderRadius: 18,
+    borderWidth: 2,
+    flexDirection: 'row',
+    minHeight: 100,
+    paddingHorizontal: 31,
+  },
+  detailInput: {
+    flex: 1,
+    fontSize: 26,
+    minHeight: 96,
+    paddingVertical: 0,
+  },
+  footer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingBottom: 1,
+    paddingHorizontal: 16,
+    paddingTop: 17,
+  },
+  cancelButton: {
+    justifyContent: 'center',
+    minHeight: 66,
+    paddingHorizontal: 2,
+  },
+  cancelText: {
+    fontSize: 27,
+    fontWeight: '600',
+    letterSpacing: -0.5,
+  },
+  payButton: {
+    alignItems: 'center',
+    borderRadius: 30,
+    justifyContent: 'center',
+    minHeight: 80,
+    minWidth: 146,
+    paddingHorizontal: 35,
+  },
+  payText: {
+    fontSize: 27,
+    fontWeight: '700',
+  },
+});
 
 const paymentStyles = StyleSheet.create({
   modalRoot: {
