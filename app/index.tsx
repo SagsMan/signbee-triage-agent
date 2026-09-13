@@ -38,6 +38,7 @@ const onboardingDotLeft = require('@/assets/images/onboarding-dot-left.png');
 const onboardingDotRight = require('@/assets/images/onboarding-dot-right.png');
 const maryOlayemi = require('@/assets/images/mary-olayemi.png');
 const ratingStar = require('@/assets/images/rating-star.png');
+const signbeeAgentMark = require('@/assets/images/signbee-agent-mark.png');
 
 const slides = [
   {
@@ -51,6 +52,7 @@ export default function SignBeeApp() {
   const [showOnboarding, setShowOnboarding] = useState(Platform.OS === 'web');
   const [showBooking, setShowBooking] = useState(false);
   const [showMatchScreen, setShowMatchScreen] = useState(false);
+  const [showArrivalScreen, setShowArrivalScreen] = useState(false);
   const [showChatScreen, setShowChatScreen] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   const [showCardDetailsSheet, setShowCardDetailsSheet] = useState(false);
@@ -67,6 +69,22 @@ export default function SignBeeApp() {
   if (!showOnboarding) return <SignBeeSplashScreen />;
   if (showChatScreen) {
     return <InterpreterChatScreen onBack={() => setShowChatScreen(false)} />;
+  }
+  if (showArrivalScreen) {
+    return (
+      <InterpreterArrivalScreen
+        onMessage={() => {
+          setShowArrivalScreen(false);
+          setShowChatScreen(true);
+        }}
+        onHome={() => {
+          setShowArrivalScreen(false);
+          setShowMatchScreen(false);
+          setShowBooking(false);
+          setShowOnboarding(true);
+        }}
+      />
+    );
   }
   if (showMatchScreen) {
     return (
@@ -92,7 +110,7 @@ export default function SignBeeApp() {
           onClose={() => setShowCardDetailsSheet(false)}
           onPay={() => {
             setShowCardDetailsSheet(false);
-            setShowChatScreen(true);
+            setShowArrivalScreen(true);
           }}
         />
         <BankTransferSheet
@@ -100,7 +118,7 @@ export default function SignBeeApp() {
           onClose={() => setShowBankTransferSheet(false)}
           onSent={() => {
             setShowBankTransferSheet(false);
-            setShowChatScreen(true);
+            setShowArrivalScreen(true);
           }}
         />
       </>
@@ -2053,6 +2071,145 @@ function InterpreterMatchScreen({
   );
 }
 
+function InterpreterArrivalScreen({
+  onMessage,
+  onHome,
+}: {
+  onMessage: () => void;
+  onHome: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+
+  return (
+    <View
+      style={[
+        arrivalStyles.screen,
+        { backgroundColor: colors.onboardingBackground },
+      ]}
+      testID="interpreter-arrival-screen"
+    >
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={colors.onboardingBackground}
+      />
+      <View
+        style={[
+          arrivalStyles.content,
+          { paddingTop: topInset, paddingBottom: bottomInset },
+        ]}
+      >
+        <View style={arrivalStyles.grabber} />
+
+        <View
+          style={[
+            arrivalStyles.successCircle,
+            { backgroundColor: colors.arrivalSuccessCircle },
+          ]}
+        >
+          <Ionicons name="checkmark" size={64} color={colors.triageGreen} />
+        </View>
+
+        <Text
+          style={[arrivalStyles.title, { color: colors.foreground }]}
+          accessibilityRole="header"
+        >
+          Mary is on the way
+        </Text>
+        <Text style={[arrivalStyles.subtitle, { color: colors.bodyText }]}>
+          Arriving in 7 minutes
+        </Text>
+
+        <View
+          style={[
+            arrivalStyles.meetingCard,
+            { backgroundColor: colors.arrivalMeetingCard },
+          ]}
+        >
+          <View
+            style={[
+              arrivalStyles.meetingIcon,
+              { borderColor: colors.arrivalIconBorder },
+            ]}
+          >
+            <Ionicons name="business-outline" size={32} color={colors.bodyText} />
+          </View>
+          <View style={arrivalStyles.meetingCopy}>
+            <Text
+              style={[arrivalStyles.meetingTitle, { color: colors.bodyText }]}
+            >
+              Meets you at A&E Hospital reception
+            </Text>
+            <Text
+              style={[arrivalStyles.meetingTime, { color: colors.bodyText }]}
+            >
+              Expected 9:48am
+            </Text>
+          </View>
+        </View>
+
+        <View
+          style={[
+            arrivalStyles.agentCard,
+            { backgroundColor: colors.arrivalAgentCard },
+          ]}
+        >
+          <Image
+            source={signbeeAgentMark}
+            resizeMode="contain"
+            style={arrivalStyles.agentMark}
+            accessibilityLabel="SignBee Agent"
+          />
+          <View style={arrivalStyles.agentCopy}>
+            <Text style={[arrivalStyles.agentTitle, { color: colors.brandInk }]}>
+              SignBee Agent is monitoring.
+            </Text>
+            <Text
+              style={[arrivalStyles.agentDescription, { color: colors.bodyText }]}
+            >
+              If Mary is delayed, Uzor will be swapped in automatically.
+            </Text>
+          </View>
+        </View>
+
+        <View style={arrivalStyles.actions}>
+          <Pressable
+            onPress={onMessage}
+            accessibilityRole="button"
+            accessibilityLabel="Message Mary"
+            style={({ pressed }) => [
+              arrivalStyles.messageButton,
+              { backgroundColor: colors.tint },
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text
+              style={[arrivalStyles.messageText, { color: colors.brandInk }]}
+            >
+              Message Mary
+            </Text>
+          </Pressable>
+          <Pressable
+            onPress={onHome}
+            accessibilityRole="button"
+            accessibilityLabel="Back to Home"
+            style={({ pressed }) => [
+              arrivalStyles.homeButton,
+              pressed && styles.pressed,
+            ]}
+          >
+            <Text style={[arrivalStyles.homeText, { color: colors.locationGreen }]}>
+              Back to Home
+            </Text>
+          </Pressable>
+        </View>
+      </View>
+    </View>
+  );
+}
+
 type ChatMessage = {
   id: string;
   incoming: boolean;
@@ -3294,6 +3451,141 @@ const paymentStyles = StyleSheet.create({
   cancelText: {
     fontSize: 27,
     fontWeight: '700',
+  },
+});
+
+const arrivalStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 50,
+  },
+  grabber: {
+    alignSelf: 'center',
+    backgroundColor: '#F1F0F3',
+    borderRadius: 999,
+    height: 6,
+    marginTop: 14,
+    width: 74,
+  },
+  successCircle: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 128,
+    justifyContent: 'center',
+    marginTop: 58,
+    width: 128,
+  },
+  title: {
+    fontSize: 38,
+    fontWeight: '700',
+    letterSpacing: -1,
+    lineHeight: 46,
+    marginTop: 43,
+    textAlign: 'center',
+  },
+  subtitle: {
+    fontSize: 25,
+    fontWeight: '500',
+    letterSpacing: -0.5,
+    lineHeight: 32,
+    marginTop: 12,
+    textAlign: 'center',
+  },
+  meetingCard: {
+    alignItems: 'center',
+    borderRadius: 20,
+    flexDirection: 'row',
+    marginTop: 58,
+    minHeight: 136,
+    paddingHorizontal: 28,
+    paddingVertical: 20,
+  },
+  meetingIcon: {
+    alignItems: 'center',
+    borderRadius: 999,
+    borderWidth: 2,
+    height: 56,
+    justifyContent: 'center',
+    width: 56,
+  },
+  meetingCopy: {
+    flex: 1,
+    marginLeft: 20,
+  },
+  meetingTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    lineHeight: 28,
+  },
+  meetingTime: {
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 25,
+    marginTop: 4,
+  },
+  agentCard: {
+    alignItems: 'center',
+    borderRadius: 20,
+    flexDirection: 'row',
+    marginTop: 20,
+    minHeight: 146,
+    paddingHorizontal: 28,
+    paddingVertical: 20,
+  },
+  agentMark: {
+    height: 80,
+    width: 86,
+  },
+  agentCopy: {
+    flex: 1,
+    marginLeft: 20,
+  },
+  agentTitle: {
+    fontSize: 21,
+    fontWeight: '700',
+    letterSpacing: -0.4,
+    lineHeight: 28,
+  },
+  agentDescription: {
+    fontSize: 18,
+    fontWeight: '500',
+    lineHeight: 25,
+    marginTop: 2,
+  },
+  actions: {
+    alignItems: 'center',
+    marginTop: 'auto',
+    paddingBottom: 5,
+    paddingTop: 34,
+    width: '100%',
+  },
+  messageButton: {
+    alignItems: 'center',
+    borderRadius: 30,
+    justifyContent: 'center',
+    minHeight: 66,
+    width: '100%',
+  },
+  messageText: {
+    fontSize: 24,
+    fontWeight: '700',
+    letterSpacing: -0.5,
+  },
+  homeButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 58,
+    marginTop: 10,
+    width: '100%',
+  },
+  homeText: {
+    fontSize: 24,
+    fontWeight: '600',
+    letterSpacing: -0.5,
   },
 });
 

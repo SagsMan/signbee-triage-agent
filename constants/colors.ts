@@ -60,6 +60,11 @@ const colors = {
     accentForeground: '#000000',
     locationBubble: '#FFDA4D',
     locationGreen: '#69C443',
+    arrivalMeetingCard: '#FDFBF4',
+    arrivalAgentCard: '#F0FDDC',
+    arrivalSuccessCircle: '#F3FDE7',
+    arrivalIconCircle: '#F5F8FC',
+    arrivalIconBorder: '#DEE7F0',
 
     // Destructive actions (delete, error states)
     destructive: '#ef4444',
