@@ -3562,6 +3562,7 @@ const arrivalStyles = StyleSheet.create({
   },
   successCircle: {
     alignItems: 'center',
+    alignSelf: 'center',
     borderRadius: 999,
     height: 128,
     justifyContent: 'center',
