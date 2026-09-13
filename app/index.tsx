@@ -679,11 +679,18 @@ function BookingScreen({
           <View style={bookingStyles.topRowSpacer} />
         </View>
 
-        <View
+        <Pressable
           style={[
             bookingStyles.urgentCard,
             { backgroundColor: colors.softGreen },
           ]}
+          onPress={() => {
+            void Haptics.selectionAsync();
+            setShowFilterSheet(true);
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Open SignBee Agent interpreter options"
+          testID="open-signbee-agent"
         >
           <View
             style={[
@@ -706,7 +713,7 @@ function BookingScreen({
               SignBee Agent will match you with a suitable interpreter immediately.
             </Text>
           </View>
-        </View>
+        </Pressable>
 
         <View style={bookingStyles.dividerRow}>
           <View style={[bookingStyles.divider, { backgroundColor: colors.divider }]} />
