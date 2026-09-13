@@ -41,6 +41,11 @@ const uzorKenny = require('@/assets/images/uzor-kenny.png');
 const amaraJohn = require('@/assets/images/amara-john.png');
 const ratingStar = require('@/assets/images/rating-star.png');
 const signbeeAgentMark = require('@/assets/images/signbee-agent-mark.png');
+const dashboardAvatar = require('@/assets/images/dashboard-avatar.png');
+const dashboardNotification = require('@/assets/images/dashboard-notification.png');
+const dashboardHero = require('@/assets/images/dashboard-hero.png');
+const dashboardUpcoming = require('@/assets/images/dashboard-upcoming.png');
+const dashboardInterpreters = require('@/assets/images/dashboard-interpreters.png');
 
 const slides = [
   {
@@ -51,7 +56,9 @@ const slides = [
 ];
 
 export default function SignBeeApp() {
+  const [showSplash, setShowSplash] = useState(Platform.OS !== 'web');
   const [showOnboarding, setShowOnboarding] = useState(Platform.OS === 'web');
+  const [showHome, setShowHome] = useState(false);
   const [showBooking, setShowBooking] = useState(false);
   const [showMatchScreen, setShowMatchScreen] = useState(false);
   const [showArrivalScreen, setShowArrivalScreen] = useState(false);
@@ -63,13 +70,14 @@ export default function SignBeeApp() {
 
   useEffect(() => {
     const transitionTimer = setTimeout(() => {
+      setShowSplash(false);
       setShowOnboarding(true);
     }, 900);
 
     return () => clearTimeout(transitionTimer);
   }, []);
 
-  if (!showOnboarding) return <SignBeeSplashScreen />;
+  if (showSplash) return <SignBeeSplashScreen />;
   if (showBackupScreen) {
     return (
       <InterpreterBackupsScreen
@@ -78,7 +86,8 @@ export default function SignBeeApp() {
           setShowArrivalScreen(false);
           setShowMatchScreen(false);
           setShowBooking(false);
-          setShowOnboarding(true);
+          setShowOnboarding(false);
+          setShowHome(true);
         }}
       />
     );
@@ -97,7 +106,9 @@ export default function SignBeeApp() {
           setShowArrivalScreen(false);
           setShowMatchScreen(false);
           setShowBooking(false);
-          setShowBackupScreen(true);
+          setShowBackupScreen(false);
+          setShowOnboarding(false);
+          setShowHome(true);
         }}
       />
     );
@@ -143,12 +154,246 @@ export default function SignBeeApp() {
   if (showBooking) {
     return (
       <BookingScreen
-        onBack={() => setShowBooking(false)}
+        onBack={() => {
+          setShowBooking(false);
+          setShowHome(true);
+        }}
         onMatched={() => setShowMatchScreen(true)}
       />
     );
   }
-  return <SignBeeOnboardingScreen onNext={() => setShowBooking(true)} />;
+  if (showOnboarding) {
+    return (
+      <SignBeeOnboardingScreen
+        onNext={() => {
+          setShowOnboarding(false);
+          setShowHome(true);
+        }}
+      />
+    );
+  }
+  if (showHome) {
+    return (
+      <SignBeeHomeScreen
+        onBook={() => {
+          void Haptics.selectionAsync();
+          setShowHome(false);
+          setShowBooking(true);
+        }}
+      />
+    );
+  }
+  return null;
+}
+
+function SignBeeHomeScreen({ onBook }: { onBook: () => void }) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const horizontalPadding = Math.max(20, Math.min(28, width * 0.068));
+  const contentWidth = Math.max(280, width - horizontalPadding * 2);
+  const heroHeight = contentWidth * (310 / 736);
+  const upcomingHeight = contentWidth * (420 / 650);
+  const interpretersHeight = contentWidth * (592 / 650);
+
+  return (
+    <View
+      style={[
+        dashboardStyles.screen,
+        {
+          backgroundColor: colors.onboardingBackground,
+          paddingTop: topInset,
+          paddingBottom: bottomInset,
+        },
+      ]}
+      testID="signbee-home-screen"
+    >
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={colors.onboardingBackground}
+      />
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
+          dashboardStyles.scrollContent,
+          {
+            paddingHorizontal: horizontalPadding,
+            paddingBottom: 104 + bottomInset,
+          },
+        ]}
+      >
+        <View style={dashboardStyles.header}>
+          <Image
+            source={dashboardAvatar}
+            resizeMode="cover"
+            style={dashboardStyles.avatar}
+            accessibilityLabel="Aliya's profile photo"
+          />
+          <View style={dashboardStyles.greeting}>
+            <Text style={[dashboardStyles.greetingName, { color: colors.locationGreen }]}>
+              Hi Aliya!
+            </Text>
+            <Text style={[dashboardStyles.greetingSubtitle, { color: colors.brandInk }]}>
+              Let’s break barriers together.
+            </Text>
+          </View>
+          <Pressable
+            onPress={() => {}}
+            style={({ pressed }) => [
+              dashboardStyles.notificationButton,
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+            testID="dashboard-notifications"
+          >
+            <Image
+              source={dashboardNotification}
+              resizeMode="contain"
+              style={dashboardStyles.notificationIcon}
+            />
+          </Pressable>
+        </View>
+
+        <View
+          style={[
+            dashboardStyles.hero,
+            { height: heroHeight, marginTop: 22 },
+          ]}
+        >
+          <Image
+            source={dashboardHero}
+            resizeMode="contain"
+            style={dashboardStyles.fullImage}
+            accessibilityLabel="Book an interpreter for any occasion"
+          />
+          <Pressable
+            onPress={onBook}
+            style={({ pressed }) => [
+              dashboardStyles.heroBookButton,
+              {
+                height: heroHeight * 0.27,
+                left: contentWidth * 0.12,
+                top: heroHeight * 0.59,
+                width: contentWidth * 0.32,
+              },
+              pressed && styles.pressed,
+            ]}
+            accessibilityRole="button"
+            accessibilityLabel="Book Now"
+            testID="dashboard-book-now"
+          />
+        </View>
+
+        <Image
+          source={dashboardUpcoming}
+          resizeMode="contain"
+          style={[
+            dashboardStyles.sectionImage,
+            { height: upcomingHeight, marginTop: 24 },
+          ]}
+          accessibilityLabel="Upcoming bookings. No upcoming bookings. Book your first interpreter."
+        />
+        <Image
+          source={dashboardInterpreters}
+          resizeMode="contain"
+          style={[
+            dashboardStyles.sectionImage,
+            { height: interpretersHeight, marginTop: 22 },
+          ]}
+          accessibilityLabel="Top interpreters Mary Olayemi and Steven Aina"
+        />
+      </ScrollView>
+
+      <View
+        style={[
+          dashboardStyles.bottomNav,
+          {
+            backgroundColor: colors.onboardingBackground,
+            paddingBottom: bottomInset,
+          },
+        ]}
+        accessibilityLabel="Main navigation"
+      >
+        <DashboardNavButton
+          icon="home"
+          label="Home"
+          active
+          colors={colors}
+          testID="dashboard-home-tab"
+        />
+        <DashboardNavButton
+          icon="checkmark-circle-outline"
+          label="Bookings"
+          colors={colors}
+          testID="dashboard-bookings-tab"
+        />
+        <DashboardNavButton
+          icon="chatbubble-ellipses-outline"
+          label="Messages"
+          colors={colors}
+          testID="dashboard-messages-tab"
+        />
+        <DashboardNavButton
+          icon="person-outline"
+          label="Profile"
+          colors={colors}
+          testID="dashboard-profile-tab"
+        />
+      </View>
+    </View>
+  );
+}
+
+function DashboardNavButton({
+  icon,
+  label,
+  active = false,
+  colors,
+  testID,
+}: {
+  icon: React.ComponentProps<typeof Ionicons>['name'];
+  label: string;
+  active?: boolean;
+  colors: ReturnType<typeof useColors>;
+  testID: string;
+}) {
+  return (
+    <Pressable
+      onPress={() => {}}
+      style={({ pressed }) => [
+        dashboardStyles.navButton,
+        pressed && styles.pressed,
+      ]}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      testID={testID}
+    >
+      <View
+        style={[
+          dashboardStyles.navIconFrame,
+          active && { backgroundColor: colors.tint },
+        ]}
+      >
+        <Ionicons
+          name={icon}
+          size={22}
+          color={active ? colors.brandInk : colors.bodyText}
+        />
+      </View>
+      <Text
+        style={[
+          dashboardStyles.navLabel,
+          { color: active ? colors.brandInk : colors.bodyText },
+          active && dashboardStyles.navLabelActive,
+        ]}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
 }
 
 function SignBeeSplashScreen() {
@@ -5080,6 +5325,99 @@ const bookingStyles = StyleSheet.create({
   },
   findButtonText: {
     fontSize: 15,
+    fontWeight: '700',
+  },
+});
+
+const dashboardStyles = StyleSheet.create({
+  screen: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    minHeight: 56,
+  },
+  avatar: {
+    borderRadius: 24,
+    height: 48,
+    width: 48,
+  },
+  greeting: {
+    flex: 1,
+    marginLeft: 12,
+  },
+  greetingName: {
+    fontSize: 16,
+    fontWeight: '700',
+    lineHeight: 20,
+  },
+  greetingSubtitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 19,
+    marginTop: 1,
+  },
+  notificationButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 44,
+    minWidth: 44,
+  },
+  notificationIcon: {
+    height: 30,
+    width: 30,
+  },
+  hero: {
+    position: 'relative',
+    width: '100%',
+  },
+  fullImage: {
+    height: '100%',
+    width: '100%',
+  },
+  heroBookButton: {
+    position: 'absolute',
+  },
+  sectionImage: {
+    width: '100%',
+  },
+  bottomNav: {
+    alignItems: 'flex-start',
+    borderTopColor: '#F2F0F5',
+    borderTopWidth: 1,
+    bottom: 0,
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    left: 0,
+    minHeight: 84,
+    paddingTop: 9,
+    position: 'absolute',
+    right: 0,
+  },
+  navButton: {
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    minHeight: 64,
+    minWidth: 64,
+  },
+  navIconFrame: {
+    alignItems: 'center',
+    borderRadius: 18,
+    height: 36,
+    justifyContent: 'center',
+    width: 58,
+  },
+  navLabel: {
+    fontSize: 12,
+    fontWeight: '400',
+    lineHeight: 16,
+    marginTop: 2,
+  },
+  navLabelActive: {
     fontWeight: '700',
   },
 });
