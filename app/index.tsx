@@ -53,6 +53,7 @@ export default function SignBeeApp() {
   const [showChatScreen, setShowChatScreen] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
   const [showCardDetailsSheet, setShowCardDetailsSheet] = useState(false);
+  const [showBankTransferSheet, setShowBankTransferSheet] = useState(false);
 
   useEffect(() => {
     const transitionTimer = setTimeout(() => {
@@ -81,7 +82,7 @@ export default function SignBeeApp() {
             if (method === 'card') {
               setShowCardDetailsSheet(true);
             } else {
-              setShowChatScreen(true);
+              setShowBankTransferSheet(true);
             }
           }}
         />
@@ -90,6 +91,14 @@ export default function SignBeeApp() {
           onClose={() => setShowCardDetailsSheet(false)}
           onPay={() => {
             setShowCardDetailsSheet(false);
+            setShowChatScreen(true);
+          }}
+        />
+        <BankTransferSheet
+          visible={showBankTransferSheet}
+          onClose={() => setShowBankTransferSheet(false)}
+          onSent={() => {
+            setShowBankTransferSheet(false);
             setShowChatScreen(true);
           }}
         />
@@ -1232,6 +1241,318 @@ function PaymentMethodOption({
     </Pressable>
   );
 }
+
+function BankTransferSheet({
+  visible,
+  onClose,
+  onSent,
+}: {
+  visible: boolean;
+  onClose: () => void;
+  onSent: () => void;
+}) {
+  const colors = useColors();
+  const insets = useSafeAreaInsets();
+  const [copiedField, setCopiedField] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!visible) setCopiedField(null);
+  }, [visible]);
+
+  const copyValue = async (field: string, value: string) => {
+    if (
+      Platform.OS === 'web' &&
+      typeof navigator !== 'undefined' &&
+      navigator.clipboard
+    ) {
+      await navigator.clipboard.writeText(value);
+    }
+    setCopiedField(field);
+    void Haptics.selectionAsync();
+  };
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={bankTransferStyles.modalRoot}>
+        <Pressable
+          style={bankTransferStyles.backdrop}
+          onPress={onClose}
+          accessibilityLabel="Close bank transfer details"
+        />
+        <View
+          style={[
+            bankTransferStyles.sheet,
+            {
+              backgroundColor: colors.onboardingBackground,
+              paddingBottom: Math.max(insets.bottom, 22),
+            },
+          ]}
+          testID="bank-transfer-sheet"
+        >
+          <View style={bankTransferStyles.grabber} />
+          <View style={bankTransferStyles.header}>
+            <Text
+              style={[bankTransferStyles.title, { color: colors.foreground }]}
+              accessibilityRole="header"
+            >
+              Transfer ₦22,000.50
+            </Text>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Close bank transfer details"
+              hitSlop={12}
+              style={({ pressed }) => [
+                bankTransferStyles.closeButton,
+                { backgroundColor: colors.softGray },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Ionicons name="close" size={22} color={colors.bodyText} />
+            </Pressable>
+          </View>
+          <View
+            style={[
+              bankTransferStyles.divider,
+              { backgroundColor: colors.divider },
+            ]}
+          />
+
+          <View
+            style={[
+              bankTransferStyles.detailsCard,
+              { backgroundColor: colors.softGray },
+            ]}
+          >
+            <BankDetailRow
+              label="BANK NAME"
+              value="Paystack - Titan"
+              colors={colors}
+            />
+            <BankDetailRow
+              label="ACCOUNT NUMBER"
+              value="2218765831"
+              colors={colors}
+              copyable
+              copied={copiedField === 'account'}
+              onCopy={() => void copyValue('account', '2218765831')}
+            />
+            <BankDetailRow
+              label="AMOUNT"
+              value="NGN 22,000.50"
+              colors={colors}
+              copyable
+              copied={copiedField === 'amount'}
+              onCopy={() => void copyValue('amount', 'NGN 22,000.50')}
+            />
+          </View>
+
+          <Text style={[bankTransferStyles.expiryText, { color: colors.bodyText }]}>
+            This account is for this transaction only and expire in{' '}
+            <Text style={{ color: colors.triageGreen }}>20:19 mins</Text>
+          </Text>
+
+          <View style={bankTransferStyles.footer}>
+            <Pressable
+              onPress={onClose}
+              accessibilityRole="button"
+              accessibilityLabel="Cancel bank transfer"
+              style={({ pressed }) => [
+                bankTransferStyles.cancelButton,
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[bankTransferStyles.cancelText, { color: colors.brandInk }]}>
+                Cancel
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                void Haptics.selectionAsync();
+                onSent();
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Mark bank transfer as sent"
+              style={({ pressed }) => [
+                bankTransferStyles.sentButton,
+                { backgroundColor: colors.tint },
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={[bankTransferStyles.sentText, { color: colors.brandInk }]}>
+                Sent
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+}
+
+function BankDetailRow({
+  label,
+  value,
+  colors,
+  copyable = false,
+  copied = false,
+  onCopy,
+}: {
+  label: string;
+  value: string;
+  colors: ReturnType<typeof useColors>;
+  copyable?: boolean;
+  copied?: boolean;
+  onCopy?: () => void;
+}) {
+  return (
+    <View style={bankTransferStyles.detailRow}>
+      <Text style={[bankTransferStyles.detailLabel, { color: colors.bodyText }]}>
+        {label}
+      </Text>
+      <View style={bankTransferStyles.detailValueRow}>
+        <Text style={[bankTransferStyles.detailValue, { color: colors.bodyText }]}>
+          {value}
+        </Text>
+        {copyable && (
+          <Pressable
+            onPress={onCopy}
+            accessibilityRole="button"
+            accessibilityLabel={`Copy ${label.toLowerCase()}`}
+            hitSlop={10}
+            style={({ pressed }) => [pressed && styles.pressed]}
+          >
+            <Ionicons
+              name={copied ? 'checkmark-circle-outline' : 'copy-outline'}
+              size={30}
+              color={colors.brandInk}
+            />
+          </Pressable>
+        )}
+      </View>
+    </View>
+  );
+}
+
+const bankTransferStyles = StyleSheet.create({
+  modalRoot: {
+    flex: 1,
+    justifyContent: 'flex-end',
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: 'rgba(51, 41, 79, 0.08)',
+  },
+  sheet: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    flex: 1,
+    maxHeight: '100%',
+    minHeight: '93%',
+    overflow: 'hidden',
+    paddingHorizontal: 50,
+  },
+  grabber: {
+    alignSelf: 'center',
+    backgroundColor: '#F1F0F3',
+    borderRadius: 999,
+    height: 6,
+    marginTop: 14,
+    width: 74,
+  },
+  header: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 87,
+  },
+  title: {
+    fontSize: 40,
+    fontWeight: '600',
+    letterSpacing: -1.2,
+  },
+  closeButton: {
+    alignItems: 'center',
+    borderRadius: 999,
+    height: 40,
+    justifyContent: 'center',
+    width: 40,
+  },
+  divider: {
+    height: 1,
+    marginTop: 42,
+  },
+  detailsCard: {
+    borderRadius: 20,
+    marginTop: 49,
+    paddingHorizontal: 32,
+    paddingVertical: 30,
+  },
+  detailRow: {
+    marginBottom: 27,
+  },
+  detailRowLast: {
+    marginBottom: 0,
+  },
+  detailLabel: {
+    fontSize: 21,
+    fontWeight: '400',
+    letterSpacing: 0.1,
+    lineHeight: 27,
+    marginBottom: 8,
+  },
+  detailValueRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  detailValue: {
+    fontSize: 27,
+    fontWeight: '600',
+    letterSpacing: -0.4,
+  },
+  expiryText: {
+    fontSize: 17,
+    lineHeight: 24,
+    marginTop: 35,
+  },
+  footer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 'auto',
+    paddingBottom: 1,
+    paddingHorizontal: 16,
+    paddingTop: 34,
+  },
+  cancelButton: {
+    justifyContent: 'center',
+    minHeight: 66,
+    paddingHorizontal: 2,
+  },
+  cancelText: {
+    fontSize: 27,
+    fontWeight: '600',
+    letterSpacing: -0.5,
+  },
+  sentButton: {
+    alignItems: 'center',
+    borderRadius: 30,
+    justifyContent: 'center',
+    minHeight: 80,
+    minWidth: 146,
+    paddingHorizontal: 32,
+  },
+  sentText: {
+    fontSize: 27,
+    fontWeight: '700',
+  },
+});
 
 function CardDetailsSheet({
   visible,
