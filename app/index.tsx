@@ -2081,7 +2081,7 @@ function InterpreterArrivalScreen({
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const { width, height } = useWindowDimensions();
-  const topInset = Platform.OS === 'web' ? 67 : insets.top;
+  const topInset = Platform.OS === 'web' ? 32 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
   const compact = width < 380;
   const horizontalPadding = Math.max(22, Math.min(50, width * 0.067));
