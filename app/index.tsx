@@ -2080,8 +2080,14 @@ function InterpreterArrivalScreen({
 }) {
   const colors = useColors();
   const insets = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
   const topInset = Platform.OS === 'web' ? 67 : insets.top;
   const bottomInset = Platform.OS === 'web' ? 34 : insets.bottom;
+  const compact = width < 380;
+  const horizontalPadding = Math.max(22, Math.min(50, width * 0.067));
+  const successCircleSize = Math.max(96, Math.min(128, width * 0.17));
+  const titleSize = Math.max(28, Math.min(38, width * 0.095));
+  const subtitleSize = Math.max(20, Math.min(25, width * 0.063));
 
   return (
     <View
@@ -2095,10 +2101,16 @@ function InterpreterArrivalScreen({
         barStyle="dark-content"
         backgroundColor={colors.onboardingBackground}
       />
-      <View
-        style={[
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={[
           arrivalStyles.content,
-          { paddingTop: topInset, paddingBottom: bottomInset },
+          {
+            minHeight: height,
+            paddingBottom: bottomInset,
+            paddingHorizontal: horizontalPadding,
+            paddingTop: topInset,
+          },
         ]}
       >
         <View style={arrivalStyles.grabber} />
@@ -2106,26 +2118,54 @@ function InterpreterArrivalScreen({
         <View
           style={[
             arrivalStyles.successCircle,
-            { backgroundColor: colors.arrivalSuccessCircle },
+              {
+                backgroundColor: colors.arrivalSuccessCircle,
+                height: successCircleSize,
+                width: successCircleSize,
+              },
           ]}
         >
-          <Ionicons name="checkmark" size={64} color={colors.triageGreen} />
+          <Ionicons
+            name="checkmark"
+            size={successCircleSize * 0.5}
+            color={colors.triageGreen}
+          />
         </View>
 
         <Text
-          style={[arrivalStyles.title, { color: colors.foreground }]}
+          style={[
+            arrivalStyles.title,
+            {
+              color: colors.foreground,
+              fontSize: titleSize,
+              lineHeight: titleSize * 1.2,
+            },
+          ]}
           accessibilityRole="header"
         >
           Mary is on the way
         </Text>
-        <Text style={[arrivalStyles.subtitle, { color: colors.bodyText }]}>
+        <Text
+          style={[
+            arrivalStyles.subtitle,
+            {
+              color: colors.bodyText,
+              fontSize: subtitleSize,
+              lineHeight: subtitleSize * 1.28,
+            },
+          ]}
+        >
           Arriving in 7 minutes
         </Text>
 
         <View
           style={[
             arrivalStyles.meetingCard,
-            { backgroundColor: colors.arrivalMeetingCard },
+            {
+              backgroundColor: colors.arrivalMeetingCard,
+              marginTop: compact ? 40 : 58,
+              paddingHorizontal: compact ? 16 : 28,
+            },
           ]}
         >
           <View
@@ -2134,16 +2174,39 @@ function InterpreterArrivalScreen({
               { borderColor: colors.arrivalIconBorder },
             ]}
           >
-            <Ionicons name="business-outline" size={32} color={colors.bodyText} />
+            <Ionicons
+              name="business-outline"
+              size={compact ? 28 : 32}
+              color={colors.bodyText}
+            />
           </View>
-          <View style={arrivalStyles.meetingCopy}>
+          <View
+            style={[
+              arrivalStyles.meetingCopy,
+              { marginLeft: compact ? 12 : 20 },
+            ]}
+          >
             <Text
-              style={[arrivalStyles.meetingTitle, { color: colors.bodyText }]}
+              style={[
+                arrivalStyles.meetingTitle,
+                {
+                  color: colors.bodyText,
+                  fontSize: compact ? 18 : 21,
+                  lineHeight: compact ? 24 : 28,
+                },
+              ]}
             >
               Meets you at A&E Hospital reception
             </Text>
             <Text
-              style={[arrivalStyles.meetingTime, { color: colors.bodyText }]}
+              style={[
+                arrivalStyles.meetingTime,
+                {
+                  color: colors.bodyText,
+                  fontSize: compact ? 16 : 18,
+                  lineHeight: compact ? 22 : 25,
+                },
+              ]}
             >
               Expected 9:48am
             </Text>
@@ -2153,21 +2216,48 @@ function InterpreterArrivalScreen({
         <View
           style={[
             arrivalStyles.agentCard,
-            { backgroundColor: colors.arrivalAgentCard },
+            {
+              backgroundColor: colors.arrivalAgentCard,
+              paddingHorizontal: compact ? 16 : 28,
+            },
           ]}
         >
           <Image
             source={signbeeAgentMark}
             resizeMode="contain"
-            style={arrivalStyles.agentMark}
+            style={[
+              arrivalStyles.agentMark,
+              { height: compact ? 68 : 80, width: compact ? 73 : 86 },
+            ]}
             accessibilityLabel="SignBee Agent"
           />
-          <View style={arrivalStyles.agentCopy}>
-            <Text style={[arrivalStyles.agentTitle, { color: colors.brandInk }]}>
+          <View
+            style={[
+              arrivalStyles.agentCopy,
+              { marginLeft: compact ? 12 : 20 },
+            ]}
+          >
+            <Text
+              style={[
+                arrivalStyles.agentTitle,
+                {
+                  color: colors.brandInk,
+                  fontSize: compact ? 18 : 21,
+                  lineHeight: compact ? 24 : 28,
+                },
+              ]}
+            >
               SignBee Agent is monitoring.
             </Text>
             <Text
-              style={[arrivalStyles.agentDescription, { color: colors.bodyText }]}
+              style={[
+                arrivalStyles.agentDescription,
+                {
+                  color: colors.bodyText,
+                  fontSize: compact ? 16 : 18,
+                  lineHeight: compact ? 22 : 25,
+                },
+              ]}
             >
               If Mary is delayed, Uzor will be swapped in automatically.
             </Text>
@@ -2205,7 +2295,7 @@ function InterpreterArrivalScreen({
             </Text>
           </Pressable>
         </View>
-      </View>
+      </ScrollView>
     </View>
   );
 }
@@ -3459,7 +3549,7 @@ const arrivalStyles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    flex: 1,
+    flexGrow: 1,
     paddingHorizontal: 50,
   },
   grabber: {
