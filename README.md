@@ -1,126 +1,99 @@
 # SignBee Interpreter Triage Agent
 
-SignBee has two parts in this repository: a React Native/Expo Go frontend and
-a Python triage and interpreter-matching backend.
+SignBee is a React Native/Expo mobile client with a Python interpreter-triage
+backend. The app supports urgent and scheduled interpreter requests, explains
+why a match was selected, and keeps ambiguous requests visible for human
+review.
 
-## Quick start
+## Requirements
 
-### Start in Replit
+- Node.js 20 or newer
+- npm 10 or newer
+- Python 3.10 or newer
+- Expo Go for device testing
+- Android Studio and an Android SDK for Android native builds
+- macOS, Xcode, and CocoaPods for iOS native builds
 
-1. Open the **SignBee Triage Agent** app preview.
-2. Wait for the Expo workflow to finish starting.
-3. Use the preview pane to view the app, or scan the displayed QR code with
-   Expo Go on your phone.
-
-The Replit workflow starts the mobile client with:
-
-```bash
-pnpm --filter @workspace/signbee-triage-agent run dev
-```
-
-### Start locally
-
-From the project root:
+Confirm that Node.js and npm are available:
 
 ```bash
-pnpm install
-pnpm --filter @workspace/signbee-triage-agent run dev
+node --version
+npm --version
 ```
 
-To run the Python triage agent as well, open a second terminal:
-
-```bash
-cd artifacts/signbee-triage-agent
-python -m pip install -r requirements.txt
-python demo_server.py
-```
-
-The demo server listens on `http://127.0.0.1:8000` and exposes the
-`POST /api/triage` endpoint. The Expo client and Python service are currently
-started independently.
-
-## Frontend
-
-The root Expo app is the client-facing surface for the SignBee experience. It
-uses React Native with Expo Router and currently contains a neutral starter
-screen, ready for the intake, matching, status, and messaging flows to be
-added.
-
-```bash
-npm install
-npm run start:tunnel
-```
-
-Scan the printed QR code with Expo Go. The frontend lives in `app/`, with
-`app.json` and `package.json` providing the Expo configuration and scripts.
-
-## Backend
-
-The Python service in `agent/` owns request understanding, urgency
-classification, interpreter matching, human escalation, and the Strands /
-Bedrock AgentCore adapter. It uses `data/interpreters.json` as a replaceable
-local dataset and is covered by the tests in `tests/`.
-
-## What it does
-
-The deterministic workflow:
-
-1. Accepts a plain-language interpreter request.
-2. Extracts setting, urgency, language, mode, duration, and location.
-3. Classifies emergency, scheduled, and human-review cases.
-4. Ranks qualified interpreters from the local dataset with explainable reasons.
-5. Escalates ambiguous or unsafe requests instead of guessing.
-6. Returns confirmation, reminder, and post-booking check-in steps.
-
-The current implementation does not claim live interpreter availability,
-production booking, or a configured AI model. The dataset in
-`data/interpreters.json` is mock data intended to be replaced by an
-authenticated service.
-
-## Project structure
-
-```text
-signbee-triage-agent/
-├── app/
-│   ├── index.tsx              # Expo Go starter screen
-│   └── _layout.tsx            # Expo Router root layout
-├── agent/
-│   ├── main.py                 # CLI entry point
-│   ├── models.py               # Request and result types
-│   ├── intake.py               # Plain-language request understanding
-│   ├── classifier.py           # Urgency and human-review classification
-│   ├── matcher.py              # Explainable interpreter ranking
-│   ├── workflow.py             # End-to-end triage workflow
-│   ├── strands_adapter.py      # Strands agent and triage tool
-│   ├── agentcore_app.py        # Bedrock AgentCore runtime entry point
-│   └── tools/
-├── data/
-│   └── interpreters.json       # Mock interpreter dataset
-├── tests/
-│   ├── test_demo_server.py
-│   ├── test_emergency.py
-│   └── test_scheduled.py
-├── app.json
-├── package.json
-├── requirements.txt
-└── README.md
-```
-
-## Setup and local run
+## Install the project
 
 ```bash
 git clone https://github.com/SagsMan/signbee-triage-agent.git
 cd signbee-triage-agent
-python -m venv .venv
+npm install
+```
+
+Set up the Python service in a separate virtual environment:
+
+```bash
+python3 -m venv .venv
 source .venv/bin/activate
-pip install -r requirements.txt
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
+```
+
+On Windows PowerShell, activate the environment with:
+
+```powershell
+.venv\Scripts\Activate.ps1
+```
+
+## Run the mobile app
+
+Start the Expo development server:
+
+```bash
+npm start
+```
+
+Then:
+
+1. Install **Expo Go** on the Android or iOS device.
+2. Connect the device and computer to the same Wi-Fi network.
+3. Scan the QR code shown by Expo Go, or press `a` for an Android emulator or
+   `i` for an iOS simulator.
+
+Useful commands:
+
+```bash
+npm run start:tunnel  # Use a public tunnel when the device cannot reach the computer
+npm run android       # Open the project in an Android emulator
+npm run ios           # Open the project in an iOS simulator
+npm run web           # Run the web version
+npm run typecheck     # Check TypeScript without emitting files
+```
+
+The Expo tunnel uses ngrok. If Expo reports that ngrok needs authentication,
+install the ngrok CLI, add your own ngrok authtoken locally, and run
+`npm run start:tunnel` again. Never commit the token to this repository.
+
+## Run the Python triage service
+
+Run the tests:
+
+```bash
+source .venv/bin/activate
 python -m unittest discover -s tests -v
 ```
 
-Run the frontend and backend independently: use the Expo command above for
-the mobile client, and use the Python commands below for backend requests.
+Start the local demo API:
 
-Run an emergency request:
+```bash
+source .venv/bin/activate
+python demo_server.py
+```
+
+The demo server listens on `http://127.0.0.1:8000` and exposes
+`POST /api/triage`. The Expo client and Python service are started
+independently.
+
+Run a request directly through the CLI:
 
 ```bash
 python -m agent.main \
@@ -130,42 +103,88 @@ python -m agent.main \
   --location "Lagos hospital"
 ```
 
-Run a scheduled request:
+## Generate an Android APK
+
+Expo Go is for development. To create a native Android build, install Android
+Studio, the Android SDK, and a compatible JDK, then generate the native Android
+project:
 
 ```bash
-python -m agent.main \
-  "A school graduation needs a Nigerian Sign Language interpreter in three weeks" \
-  --language NSL \
-  --setting school
+npx expo prebuild --platform android
 ```
 
-## Strands and Bedrock AgentCore
-
-The backend can wrap the deterministic triage tool with Strands and expose it
-through Bedrock AgentCore. Configure AWS through the runtime environment and
-never commit credentials:
+Build a release APK:
 
 ```bash
-export AWS_REGION=us-east-1
-export BEDROCK_MODEL_ID=<model-id-available-in-your-region>
-python -c "from agent.strands_adapter import create_strands_agent; print(create_strands_agent())"
-python -m agent.agentcore_app
+cd android
+./gradlew assembleRelease
 ```
 
-The AgentCore endpoint accepts JSON such as:
+On Windows, run `gradlew.bat assembleRelease` instead. The APK is written to:
 
-```json
-{
-  "prompt": "A patient needs an interpreter urgently in A&E",
-  "mode": "in-person"
-}
+```text
+android/app/build/outputs/apk/release/app-release.apk
 ```
 
-## Safety rules
+For a distributable signed APK, configure an Android release keystore through
+Gradle/Android Studio. Keep the keystore and its passwords outside the
+repository. A debug APK can be built with `./gradlew assembleDebug`.
 
-- Emergency language is surfaced explicitly.
-- Ambiguous hospital requests require human confirmation.
-- Missing language or no suitable match is visible in the result.
-- Match results include reasons for coordinator review.
-- Mock availability is not production availability.
-- AWS credentials, API keys, and personal data do not belong in this repository.
+## Build the iOS app
+
+iOS does not use APK files. The equivalent installable artifact is an `.ipa`,
+and Apple signing is required for a physical device or distribution build.
+iOS builds require macOS and Xcode.
+
+Generate the native iOS project and install its CocoaPods dependencies:
+
+```bash
+npx expo prebuild --platform ios
+cd ios
+pod install
+cd ..
+```
+
+Run a Release build on the simulator or a connected development device:
+
+```bash
+npx expo run:ios --configuration Release
+```
+
+To create an `.ipa`, open the generated workspace in Xcode:
+
+```bash
+open ios/*.xcworkspace
+```
+
+In Xcode, select the app target, configure the Apple Developer team and
+signing profile, then choose **Product → Archive**. From the Organizer, choose
+**Distribute App** and export the signed `.ipa` or submit it through the
+appropriate Apple distribution channel.
+
+Native `android/` and `ios/` directories are generated by `expo prebuild`.
+Keep them committed only if the project is moving to a maintained native
+workflow; otherwise remove the generated directories after local builds.
+
+## Project structure
+
+```text
+signbee-triage-agent/
+├── app/                 # Expo Router screens
+├── assets/images/       # SignBee branding and profile assets
+├── components/          # Shared React Native components
+├── agent/               # Triage, classification, and matching logic
+├── data/                # Local mock interpreter dataset
+├── tests/               # Python backend tests
+├── app.json             # Expo configuration
+├── demo_server.py       # Local Python API server
+├── package.json         # Expo scripts and dependencies
+└── requirements.txt     # Python dependencies
+```
+
+## Safety and data notes
+
+- The included interpreter data is mock data and is not live availability.
+- The demo service does not provide production booking or authentication.
+- Do not commit AWS credentials, API keys, ngrok tokens, signing keys, or
+  personal data.

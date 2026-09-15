@@ -9,9 +9,7 @@ import colors from '@/constants/colors';
  *
  * Falls back to the light palette when no dark key is defined in
  * constants/colors.ts (the scaffold ships light-only by default).
- * When a sibling web artifact's dark tokens are synced into a `dark`
- * key, this hook will automatically switch palettes based on the
- * device's appearance setting.
+ * Add a dark override here if the app later supports a dark color scheme.
  */
 export function useColors() {
   const scheme = useColorScheme();

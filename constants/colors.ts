@@ -1,12 +1,11 @@
 /**
  * Semantic design tokens for the mobile app.
  *
- * These tokens mirror the naming conventions used in web artifacts (index.css)
- * so that multi-artifact projects share a cohesive visual identity.
+ * These semantic tokens keep the app's visual language consistent across
+ * screens and make color changes easy to manage.
  *
  * Replace the placeholder values below with values that match the project's
- * brand. If a sibling web artifact exists, read its index.css and convert the
- * HSL values to hex so both artifacts use the same palette.
+ * brand. Keep the values here as the source of truth for the mobile client.
  *
  * To add dark mode, add a `dark` key with the same token names.
  * The useColors() hook will automatically pick it up.
@@ -75,7 +74,7 @@ const colors = {
     input: '#86C900',
   },
 
-  // Border radius (in px). Sync from the sibling web artifact's --radius
+  // Border radius values are shared by the app's cards, sheets, and controls.
   // CSS variable. This value applies to cards, buttons, inputs, and modals.
   radius: 8,
 };
