@@ -188,3 +188,8 @@ signbee-triage-agent/
 - The demo service does not provide production booking or authentication.
 - Do not commit AWS credentials, API keys, ngrok tokens, signing keys, or
   personal data.
+
+## Project credits
+
+- **Maryam** — UI/UX Designer
+- **Sagiru** — Developer
