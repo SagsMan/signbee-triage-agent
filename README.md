@@ -5,6 +5,31 @@ backend. The app supports urgent and scheduled interpreter requests, explains
 why a match was selected, and keeps ambiguous requests visible for human
 review.
 
+## App screenshots
+
+The following screenshots show the SignBee onboarding, booking, virtual and
+in-person request flows, and triage experience:
+
+| Onboarding | Urgent request |
+|---|---|
+| <img src="docs/screenshots/01-Screenshot_2026-09-15_220500_1789506510391.png" width="180" alt="SignBee onboarding screen"> | <img src="docs/screenshots/02-Screenshot_2026-09-15_220522_1789506513678.png" width="180" alt="SignBee urgent request screen"> |
+
+| In-person request | Virtual request |
+|---|---|
+| <img src="docs/screenshots/03-Screenshot_2026-09-15_220550_1789506516049.png" width="180" alt="SignBee Agent in-person request form"> | <img src="docs/screenshots/04-Screenshot_2026-09-15_220606_1789506518958.png" width="180" alt="SignBee Agent virtual request form"> |
+
+| Triage progress | Screen 06 |
+|---|---|
+| <img src="docs/screenshots/05-Screenshot_2026-09-15_220627_1789506536608.png" width="180" alt="SignBee triage progress screen"> | <img src="docs/screenshots/06-Screenshot_2026-09-15_220640_1789506540691.png" width="180" alt="SignBee app screen 06"> |
+
+| Screen 07 | Screen 08 |
+|---|---|
+| <img src="docs/screenshots/07-Screenshot_2026-09-15_220651_1789506553374.png" width="180" alt="SignBee app screen 07"> | <img src="docs/screenshots/08-Screenshot_2026-09-15_220706_1789506555896.png" width="180" alt="SignBee app screen 08"> |
+
+| Screen 09 | Screen 10 |
+|---|---|
+| <img src="docs/screenshots/09-Screenshot_2026-09-15_220717_1789506557988.png" width="180" alt="SignBee app screen 09"> | <img src="docs/screenshots/10-Screenshot_2026-09-15_220726_1789506578424.png" width="180" alt="SignBee app screen 10"> |
+
 ## Requirements
 
 - Node.js 20 or newer
